@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="en">
+<HEAD>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <TITLE>Flight Delay Prediction System — README</TITLE>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:        #07111c;
+      --surface:   #0d1e2e;
+      --surface2:  #122234;
+      --border:    rgba(52,152,219,0.18);
+      --blue:      #3498db;
+      --blue-lite: #5dade2;
+      --cyan:      #00cec9;
+      --green:     #00b894;
+      --orange:    #f39c12;
+      --red:       #e74c3c;
+      --text:      #dce8f0;
+      --muted:     #7a9bb5;
+      --tag-bg:    rgba(52,152,219,0.12);
+      --mono:      'JetBrains Mono', monospace;
+      --sans:      'Space Grotesk', sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.7;
+      font-size: 15px;
+    }
+
+    /* ── Noise texture overlay ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Layout ── */
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 0 2rem 6rem;
+      position: relative; z-index: 1;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      background: linear-gradient(135deg, #0b1d2e 0%, #0f2c43 50%, #122036 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 4rem 2rem 3.5rem;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::after {
+      content: '';
+      position: absolute;
+      bottom: -60px; left: 50%; transform: translateX(-50%);
+      width: 600px; height: 120px;
+      background: radial-gradient(ellipse, rgba(52,152,219,0.18) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero-badge {
+      display: inline-block;
+      background: var(--tag-bg);
+      border: 1px solid var(--border);
+      color: var(--blue-lite);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      padding: 0.3rem 0.9rem;
+      border-radius: 20px;
+      margin-bottom: 1.2rem;
+    }
+    .hero h1 {
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      line-height: 1.15;
+      margin-bottom: 0.8rem;
+    }
+    .hero h1 span { color: var(--blue); }
+    .hero p {
+      font-size: 1.05rem;
+      color: var(--muted);
+      max-width: 560px;
+      margin: 0 auto 2rem;
+    }
+    .hero-pills { display: flex; justify-content: center; gap: 0.6rem; flex-wrap: wrap; }
+    .pill {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 0.8rem;
+      padding: 0.3rem 0.9rem;
+      border-radius: 30px;
+    }
+    .pill.green  { border-color: rgba(0,184,148,0.35); color: var(--green); }
+    .pill.orange { border-color: rgba(243,156,18,0.35); color: var(--orange); }
+    .plane-icon { font-size: 3.5rem; display: block; margin-bottom: 1rem; animation: fly 4s ease-in-out infinite; }
+    @keyframes fly {
+      0%,100% { transform: translateY(0) rotate(-2deg); }
+      50%      { transform: translateY(-12px) rotate(2deg); }
+    }
+
+    /* ── Section ── */
+    section { margin-top: 3.5rem; }
+    .section-label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--blue);
+      margin-bottom: 0.6rem;
+    }
+    h2 {
+      font-size: 1.55rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 1.2rem;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 0.6rem;
+    }
+    h3 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--blue-lite);
+      margin: 1.4rem 0 0.5rem;
+    }
+    p { color: var(--muted); margin-bottom: 0.8rem; }
+
+    /* ── Feature cards ── */
+    .feature-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+      gap: 1.1rem;
+      margin-top: 1.2rem;
+    }
+    .feature-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.3rem 1.4rem;
+      transition: transform 0.2s, box-shadow 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; height: 3px;
+      background: var(--accent, var(--blue));
+      border-radius: 14px 14px 0 0;
+    }
+    .feature-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 12px 32px rgba(0,0,0,0.35);
+    }
+    .feature-icon { font-size: 1.8rem; margin-bottom: 0.6rem; display: block; }
+    .feature-card h4 { font-size: 0.95rem; font-weight: 600; color: #fff; margin-bottom: 0.4rem; }
+    .feature-card p  { font-size: 0.85rem; margin: 0; }
+
+    /* NEW feature highlight ── */
+    .new-section {
+      background: linear-gradient(135deg, rgba(0,184,148,0.06), rgba(52,152,219,0.06));
+      border: 1px solid rgba(0,184,148,0.2);
+      border-radius: 16px;
+      padding: 1.8rem 2rem;
+      margin-top: 1.4rem;
+    }
+    .new-badge {
+      display: inline-block;
+      background: var(--green);
+      color: #000;
+      font-size: 0.62rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: 4px;
+      margin-right: 0.5rem;
+      vertical-align: middle;
+    }
+    .new-section h2 { border-color: rgba(0,184,148,0.3); }
+
+    /* ── Sub-feature detail rows ── */
+    .detail-row {
+      display: flex;
+      gap: 0.8rem;
+      align-items: flex-start;
+      margin-bottom: 0.85rem;
+    }
+    .detail-row .icon { font-size: 1.2rem; flex-shrink: 0; margin-top: 2px; }
+    .detail-row .info { font-size: 0.88rem; color: var(--muted); }
+    .detail-row .info strong { color: var(--text); }
+
+    /* ── Field table ── */
+    .field-table { width: 100%; border-collapse: collapse; margin-top: 0.8rem; font-size: 0.85rem; }
+    .field-table th {
+      text-align: left;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--blue);
+      padding: 0.5rem 0.8rem;
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+    }
+    .field-table td {
+      padding: 0.55rem 0.8rem;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      color: var(--muted);
+      vertical-align: top;
+    }
+    .field-table td:first-child {
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      white-space: nowrap;
+    }
+    .field-table tr:last-child td { border-bottom: none; }
+    .field-table tr:hover td { background: rgba(52,152,219,0.04); }
+
+    /* ── Code block ── */
+    pre {
+      background: #030d17;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.2rem 1.4rem;
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      color: #90bfd4;
+      overflow-x: auto;
+      margin: 0.8rem 0;
+    }
+    code { font-family: var(--mono); font-size: 0.82rem; color: var(--cyan); }
+
+    /* ── Model cards ── */
+    .model-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 0.9rem; margin-top: 0.9rem; }
+    @media(max-width:600px){ .model-grid{grid-template-columns:1fr;} }
+    .model-card {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.1rem;
+    }
+    .model-card .name { font-weight: 700; color: #fff; margin-bottom: 0.4rem; }
+    .model-card .desc { font-size: 0.82rem; color: var(--muted); }
+
+    /* ── App pages ── */
+    .page-list { list-style: none; margin-top: 0.8rem; }
+    .page-list li {
+      padding: 0.7rem 1rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 0.7rem;
+      font-size: 0.9rem;
+    }
+    .page-list li:last-child { border: none; }
+    .page-list .pg-num {
+      background: var(--tag-bg);
+      color: var(--blue);
+      border-radius: 6px;
+      width: 26px; height: 26px;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 0.75rem; font-weight: 700; flex-shrink: 0;
+    }
+    .page-list .pg-title { font-weight: 600; color: #fff; }
+    .page-list .pg-desc  { color: var(--muted); font-size: 0.83rem; }
+    .badge-new { background: var(--green); color: #000; font-size: 0.6rem; font-weight: 800; padding: 1px 6px; border-radius: 3px; margin-left: 6px; vertical-align: middle; text-transform: uppercase; }
+    .badge-upd { background: var(--blue); color: #fff; font-size: 0.6rem; font-weight: 800; padding: 1px 6px; border-radius: 3px; margin-left: 6px; vertical-align: middle; text-transform: uppercase; }
+
+    /* ── Risk indicator ── */
+    .risk-bar {
+      height: 6px;
+      border-radius: 3px;
+      background: linear-gradient(90deg, var(--green), var(--orange), var(--red));
+      margin: 0.5rem 0 1rem;
+      position: relative;
+    }
+    .risk-labels { display: flex; justify-content: space-between; font-size: 0.72rem; color: var(--muted); margin-top: 0.2rem; }
+
+    /* ── WMO code sample ── */
+    .wmo-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.6rem; }
+    .wmo-chip {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 0.25rem 0.75rem;
+      font-size: 0.8rem;
+      color: var(--text);
+    }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 3rem 1rem 2rem;
+      font-size: 0.8rem;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+      margin-top: 4rem;
+    }
+    footer a { color: var(--blue); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    /* ── TOC ── */
+    .toc {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.2rem 1.5rem;
+      margin-top: 2rem;
+      font-size: 0.87rem;
+    }
+    .toc .toc-title { font-weight: 700; color: #fff; margin-bottom: 0.7rem; font-size: 0.8rem; letter-spacing: 1px; text-transform: uppercase; }
+    .toc ul { list-style: none; column-count: 2; column-gap: 1.5rem; }
+    @media(max-width:500px){ .toc ul{column-count:1;} }
+    .toc li { padding: 0.2rem 0; }
+    .toc a  { color: var(--blue-lite); text-decoration: none; }
+    .toc a:hover { text-decoration: underline; }
+
+    /* ── Weather feature callout ── */
+    .callout {
+      background: var(--surface2);
+      border-left: 4px solid var(--accent, var(--blue));
+      border-radius: 0 10px 10px 0;
+      padding: 0.9rem 1.1rem;
+      font-size: 0.87rem;
+      color: var(--muted);
+      margin: 0.9rem 0;
+    }
+    .callout strong { color: var(--text); }
+
+    /* ── Airport dot map (SVG-style visual) ── */
+    .map-preview {
+      background: #050f1a;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem;
+      position: relative;
+      overflow: hidden;
+      min-height: 140px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.82rem;
+      color: var(--muted);
+      gap: 0.5rem;
+      flex-direction: column;
+      margin-top: 0.8rem;
+    }
+  </style>
+</HEAD>
+<BODY>
+
+<!-- ═══════════════════ HERO ═══════════════════ -->
+<div class="hero">
+  <span class="plane-icon">✈️</span>
+  <div class="hero-badge">Aerospace · Machine Learning · Data Science</div>
+  <h1>Flight Delay <span>Prediction</span> System</h1>
+  <p>End-to-end ML platform that predicts departure delays using historical flight data, real-time weather, and interactive route maps.</p>
+  <div class="hero-pills">
+    <span class="pill">Python · Streamlit</span>
+    <span class="pill">scikit-learn</span>
+    <span class="pill green">Live Weather API</span>
+    <span class="pill orange">Interactive Maps</span>
+    <span class="pill">Kaggle Dataset 2018–2024</span>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- TOC -->
+  <div class="toc">
+    <div class="toc-title">Contents</div>
+    <ul>
+      <li><a href="#background">Background</a></li>
+      <li><a href="#new-features">✨ New Features</a></li>
+      <li><a href="#structure">Project Structure</a></li>
+      <li><a href="#setup">Setup &amp; Run</a></li>
+      <li><a href="#models">ML Models</a></li>
+      <li><a href="#pages">App Pages</a></li>
+      <li><a href="#weather">Weather Integration</a></li>
+      <li><a href="#map">Route Map Feature</a></li>
+      <li><a href="#record-layout">Record Layout</a></li>
+      <li><a href="#dataset">Using Real Dataset</a></li>
+    </ul>
+  </div>
+
+  <!-- ═══════════════════ BACKGROUND ═══════════════════ -->
+  <section id="background">
+    <div class="section-label">Overview</div>
+    <h2>Background</h2>
+    <p>
+      The data powering this system is extracted from the <strong>Marketing Carrier On-Time Performance</strong> table
+      of the TranStats "On-Time" database (beginning January 2018). The time period is encoded in the compressed filename —
+      for example, <code>XXX_XXXXX_2001_1</code> contains data for the first month of 2001.
+    </p>
+    <p>
+      Flight delays cause significant inconvenience to passengers, increase airline operating costs, and disrupt
+      airport logistics. This system predicts whether a flight will be delayed (departure ≥ 15 minutes) using
+      historical flight records and live weather data fetched at prediction time.
+    </p>
+
+    <div class="feature-grid">
+      <div class="feature-card" style="--accent:var(--blue)">
+        <span class="feature-icon">🤖</span>
+        <h4>Three ML Models</h4>
+        <p>Random Forest, Gradient Boosting, and Logistic Regression — train and compare with one click.</p>
+      </div>
+      <div class="feature-card" style="--accent:var(--cyan)">
+        <span class="feature-icon">🌦️</span>
+        <h4>Live Weather</h4>
+        <p>Real-time conditions at origin &amp; destination airports via Open-Meteo (free, no API key).</p>
+      </div>
+      <div class="feature-card" style="--accent:var(--green)">
+        <span class="feature-icon">🗺️</span>
+        <h4>Route Map</h4>
+        <p>Interactive Folium map with animated flight path, weather popups, and risk-coloured routes.</p>
+      </div>
+      <div class="feature-card" style="--accent:var(--orange)">
+        <span class="feature-icon">📊</span>
+        <h4>EDA Dashboard</h4>
+        <p>Delay by month, hour, airline, weather condition, and origin–destination route analysis.</p>
+      </div>
+      <div class="feature-card" style="--accent:var(--red)">
+        <span class="feature-icon">📈</span>
+        <h4>Model Performance</h4>
+        <p>ROC curves, confusion matrices, and feature importance charts per trained model.</p>
+      </div>
+      <div class="feature-card" style="--accent:var(--blue-lite)">
+        <span class="feature-icon">🎯</span>
+        <h4>Single-Flight Predict</h4>
+        <p>Enter flight details and get a delay probability with a gauge chart and plain-English verdict.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════ NEW FEATURES ═══════════════════ -->
+  <section id="new-features">
+    <div class="section-label">What's New</div>
+    <h2>✨ New Features</h2>
+
+    <!-- Live Weather -->
+    <div class="new-section" style="margin-top:0">
+      <h2 style="border-color:rgba(0,184,148,0.3)">
+        <span class="new-badge">New</span> Live Weather Forecast Integration
+      </h2>
+      <p>
+        Weather conditions are now fetched live at prediction time using the
+        <strong>Open-Meteo API</strong> — completely free, no account or API key required.
+        Weather data is retrieved for both the origin and destination airports simultaneously,
+        then converted into 25 structured model features that feed directly into delay probability estimation.
+      </p>
+
+      <div class="detail-row">
+        <div class="icon">🌐</div>
+        <div class="info">
+          <strong>Zero-config API:</strong> Calls <code>api.open-meteo.com/v1/forecast</code> with the airport's
+          latitude/longitude. No signup, no rate-limit headaches. Supported for all 30 major US airports in the
+          built-in coordinate table.
+        </div>
+      </div>
+      <div class="detail-row">
+        <div class="icon">📡</div>
+        <div class="info">
+          <strong>Live vs. Offline badges:</strong> Each airport weather card shows a green <strong>LIVE</strong> badge
+          when data was freshly fetched, or a red <strong>OFFLINE</strong> badge with safe fallback defaults when the
+          API is unreachable (timeout, unknown airport, HTTP error).
+        </div>
+      </div>
+      <div class="detail-row">
+        <div class="icon">🧮</div>
+        <div class="info">
+          <strong>Weather risk score (0–10):</strong> A composite route risk score is computed from wind speed,
+          visibility, precipitation, and weather condition at both airports. Displayed as a coloured badge
+          (green / amber / red) beside every prediction.
+        </div>
+      </div>
+      <div class="detail-row">
+        <div class="icon">⚡</div>
+        <div class="info">
+          <strong>25 engineered weather features</strong> are appended to each prediction request:
+          temperature, humidity, wind speed &amp; severity, visibility category, precipitation category,
+          cloud cover, pressure, WMO condition code, temperature differential between airports,
+          worst-leg visibility, and the combined route risk score.
+        </div>
+      </div>
+
+      <h3>WMO Weather Condition Codes Supported</h3>
+      <div class="wmo-chips">
+        <span class="wmo-chip">☀️ Clear sky</span>
+        <span class="wmo-chip">🌤️ Mainly clear</span>
+        <span class="wmo-chip">⛅ Partly cloudy</span>
+        <span class="wmo-chip">☁️ Overcast</span>
+        <span class="wmo-chip">🌫️ Fog / Icy fog</span>
+        <span class="wmo-chip">🌦️ Drizzle (light/moderate/dense)</span>
+        <span class="wmo-chip">🌧️ Rain (slight/moderate/heavy)</span>
+        <span class="wmo-chip">❄️ Snow / Snow grains</span>
+        <span class="wmo-chip">🌧️ Showers</span>
+        <span class="wmo-chip">❄️ Snow showers</span>
+        <span class="wmo-chip">⛈️ Thunderstorm ± hail</span>
+      </div>
+
+      <h3>Weather Risk Scoring Logic</h3>
+      <div class="risk-bar"></div>
+      <div class="risk-labels"><span>0 — Low</span><span>5 — Moderate</span><span>10 — Severe</span></div>
+      <table class="field-table" style="margin-top:0.9rem">
+        <thead><tr><th>Condition</th><th>Points added</th></tr></thead>
+        <tbody>
+          <tr><td>Wind &gt; 10 m/s</td><td>+1.5 per airport</td></tr>
+          <tr><td>Wind &gt; 17 m/s (gale)</td><td>+2.0 per airport</td></tr>
+          <tr><td>Visibility &lt; 5 km</td><td>+0.5 per airport</td></tr>
+          <tr><td>Visibility &lt; 1 km</td><td>+1.5 per airport</td></tr>
+          <tr><td>Visibility &lt; 200 m</td><td>+2.5 per airport</td></tr>
+          <tr><td>Any precipitation</td><td>+0.5 per airport</td></tr>
+          <tr><td>Precipitation &gt; 2.5 mm</td><td>+1.0 per airport</td></tr>
+          <tr><td>Precipitation &gt; 7.5 mm</td><td>+1.5 per airport</td></tr>
+          <tr><td>Thunderstorm</td><td>+3.0 per airport</td></tr>
+          <tr><td>Snow or Fog</td><td>+2.0 per airport</td></tr>
+          <tr><td>Rain or Drizzle</td><td>+1.0 per airport</td></tr>
+        </tbody>
+      </table>
+      <div class="callout" style="--accent:var(--green)">
+        <strong>Fallback behaviour:</strong> If the API call fails for any reason (timeout, unknown airport IATA code,
+        HTTP error), <code>_default_weather()</code> returns safe neutral values (20 °C, Clear, 10 km vis, 5 m/s wind)
+        so prediction always completes without crashing the app.
+      </div>
+    </div>
+
+    <!-- Route Map -->
+    <div class="new-section" style="--accent:var(--blue); margin-top:1.5rem; background: linear-gradient(135deg,rgba(52,152,219,0.06),rgba(0,206,201,0.04)); border-color:rgba(52,152,219,0.25)">
+      <h2 style="border-color:rgba(52,152,219,0.3)">
+        <span class="new-badge" style="background:var(--blue)">New</span> Interactive Route Map
+      </h2>
+      <p>
+        The <strong>Predict a Flight</strong> page now renders a live <strong>Folium</strong> map (via
+        <code>streamlit-folium</code>) showing the full origin-to-destination route alongside current
+        weather at each airport.
+      </p>
+
+      <div class="detail-row">
+        <div class="icon">🛫</div>
+        <div class="info">
+          <strong>Airport markers with weather popups:</strong> Clicking either airport pin opens a popup
+          showing live temperature, wind, visibility, humidity, and the weather icon for current conditions.
+        </div>
+      </div>
+      <div class="detail-row">
+        <div class="icon">🎨</div>
+        <div class="info">
+          <strong>Risk-coloured flight path:</strong> The polyline connecting origin to destination is drawn in
+          <span style="color:var(--red)">red</span> for high weather risk (score &gt; 6),
+          <span style="color:var(--orange)">orange</span> for moderate (3–6), or
+          <span style="color:var(--green)">green</span> for low risk (&lt; 3).
+        </div>
+      </div>
+      <div class="detail-row">
+        <div class="icon">🔢</div>
+        <div class="info">
+          <strong>Risk score caption:</strong> Below the map a caption shows the route name, line colour meaning,
+          and the numeric weather risk score out of 10 at a glance.
+        </div>
+      </div>
+      <div class="detail-row">
+        <div class="icon">📐</div>
+        <div class="info">
+          <strong>Auto-fit bounds:</strong> The map automatically zooms and pans to fit both airport locations
+          with comfortable padding, regardless of route distance.
+        </div>
+      </div>
+      <div class="detail-row">
+        <div class="icon">🔌</div>
+        <div class="info">
+          <strong>Optional dependency:</strong> The map renders only when <code>folium</code> and
+          <code>streamlit-folium</code> are installed. If missing, the app shows a helpful install prompt
+          and continues working without the map.
+        </div>
+      </div>
+
+      <div class="callout" style="--accent:var(--blue)">
+        <strong>Install map dependencies:</strong><br />
+        <code>pip install folium streamlit-folium</code>
+      </div>
+
+      <div class="map-preview">
+        <span style="font-size:2rem">🗺️</span>
+        <span>Interactive Folium map renders here inside the Streamlit app</span>
+        <span style="font-size:0.75rem; opacity:0.5">Origin marker → coloured polyline → Destination marker</span>
+      </div>
+
+      <h3>Supported Airports (30 major US hubs)</h3>
+      <p style="font-size:0.85rem">
+        ATL · LAX · ORD · DFW · DEN · JFK · SFO · SEA · LAS · MCO · EWR · MIA ·
+        PHX · IAH · BOS · MSP · DTW · FLL · PHL · LGA · BWI · SLC · DCA · SAN ·
+        MDW · TPA · PDX · HNL · DAL · STL
+      </p>
+    </div>
+  </section>
+
+  <!-- ═══════════════════ STRUCTURE ═══════════════════ -->
+  <section id="structure">
+    <div class="section-label">Files</div>
+    <h2>Project Structure</h2>
+    <pre>flight_delay_app/
+├── app.py                     # Main Streamlit application
+├── requirements.txt
+├── README.md / readme.html    # This documentation
+└── utils/
+    ├── data_generator.py      # Synthetic dataset generator (mimics Kaggle dataset)
+    ├── ml_models.py           # ML model training &amp; prediction
+    └── weather_fetcher.py     # ✨ NEW: live weather integration (Open-Meteo)</pre>
+  </section>
+
+  <!-- ═══════════════════ SETUP ═══════════════════ -->
+  <section id="setup">
+    <div class="section-label">Getting Started</div>
+    <h2>Setup &amp; Run</h2>
+    <pre># 1. Install core dependencies
+pip install -r requirements.txt
+
+# 2. Install map dependencies (optional but recommended)
+pip install folium streamlit-folium
+
+# 3. Run the app
+streamlit run app.py</pre>
+  </section>
+
+  <!-- ═══════════════════ MODELS ═══════════════════ -->
+  <section id="models">
+    <div class="section-label">Machine Learning</div>
+    <h2>ML Models</h2>
+    <div class="model-grid">
+      <div class="model-card">
+        <div class="name">🌲 Random Forest</div>
+        <div class="desc">Ensemble of 100 decision trees with balanced class weights. Best for feature importance analysis.</div>
+      </div>
+      <div class="model-card">
+        <div class="name">📈 Gradient Boosting</div>
+        <div class="desc">Sequential boosting with learning rate 0.1. Typically highest AUC-ROC score.</div>
+      </div>
+      <div class="model-card">
+        <div class="name">📐 Logistic Regression</div>
+        <div class="desc">Linear baseline with StandardScaler pipeline. Fast to train, interpretable coefficients.</div>
+      </div>
+    </div>
+
+    <h3>Features Used</h3>
+    <p>Month, Day of Week, Day of Month, Scheduled departure time, Distance, Scheduled elapsed time,
+    Airline (label-encoded), Origin (label-encoded), Destination (label-encoded), Weather condition (encoded).
+    <span class="new-badge">New</span> Plus 25 live weather features when weather data is available.</p>
+
+    <h3>Target Variable</h3>
+    <p><code>IS_DELAYED</code> — 1 if departure delay ≥ 15 minutes, 0 otherwise.</p>
+  </section>
+
+  <!-- ═══════════════════ PAGES ═══════════════════ -->
+  <section id="pages">
+    <div class="section-label">Navigation</div>
+    <h2>App Pages</h2>
+    <ul class="page-list">
+      <li>
+        <span class="pg-num">1</span>
+        <div>
+          <div class="pg-title">🏠 Overview</div>
+          <div class="pg-desc">Project summary, KPIs, dataset stats, and workflow diagram.</div>
+        </div>
+      </li>
+      <li>
+        <span class="pg-num">2</span>
+        <div>
+          <div class="pg-title">📊 EDA &amp; Insights</div>
+          <div class="pg-desc">Interactive charts: delay by month, hour, airline, weather, and route map.</div>
+        </div>
+      </li>
+      <li>
+        <span class="pg-num">3</span>
+        <div>
+          <div class="pg-title">🤖 Model Training</div>
+          <div class="pg-desc">Train RF, GBM, and LR with one click. See class distribution and training metrics.</div>
+        </div>
+      </li>
+      <li>
+        <span class="pg-num">4</span>
+        <div>
+          <div class="pg-title">🎯 Predict a Flight
+            <span class="badge-new">New: Weather</span>
+            <span class="badge-upd">Updated: Map</span>
+          </div>
+          <div class="pg-desc">Enter flight details → live weather fetched → delay probability + gauge chart + interactive route map with risk-coloured flight path and airport weather popups.</div>
+        </div>
+      </li>
+      <li>
+        <span class="pg-num">5</span>
+        <div>
+          <div class="pg-title">📈 Model Performance</div>
+          <div class="pg-desc">ROC curves, confusion matrices, and feature importance charts (bar or treemap).</div>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- ═══════════════════ WEATHER DETAIL ═══════════════════ -->
+  <section id="weather">
+    <div class="section-label">API Integration</div>
+    <h2>Weather Integration — <code>utils/weather_fetcher.py</code></h2>
+    <p>All weather logic lives in <code>utils/weather_fetcher.py</code>. Key public functions:</p>
+
+    <table class="field-table">
+      <thead><tr><th>Function</th><th>Returns</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>fetch_weather(iata)</td>
+          <td>dict</td>
+          <td>Fetches current conditions for a single airport. Falls back gracefully on failure.</td>
+        </tr>
+        <tr>
+          <td>get_route_weather(origin, dest)</td>
+          <td>tuple[dict, dict]</td>
+          <td>Fetches weather for both airports in sequence. Returns (origin_wx, dest_wx).</td>
+        </tr>
+        <tr>
+          <td>compute_risk_score(origin_wx, dest_wx)</td>
+          <td>float 0–10</td>
+          <td>Composite risk score considering wind, visibility, precipitation, and condition at both ends.</td>
+        </tr>
+        <tr>
+          <td>build_weather_features(origin_wx, dest_wx)</td>
+          <td>dict (25 keys)</td>
+          <td>Converts raw weather dicts into model-ready numeric features for the ML pipeline.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Weather Response Fields</h3>
+    <table class="field-table">
+      <thead><tr><th>Field</th><th>Type</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td>airport</td><td>str</td><td>IATA airport code</td></tr>
+        <tr><td>live</td><td>bool</td><td>True if data was freshly fetched, False if using fallback defaults</td></tr>
+        <tr><td>temperature_c</td><td>float</td><td>Air temperature at 2 m height (°C)</td></tr>
+        <tr><td>feels_like_c</td><td>float</td><td>Apparent temperature (°C)</td></tr>
+        <tr><td>humidity_pct</td><td>int</td><td>Relative humidity (%)</td></tr>
+        <tr><td>pressure_hpa</td><td>float</td><td>Surface pressure (hPa)</td></tr>
+        <tr><td>wind_speed_ms</td><td>float</td><td>Wind speed at 10 m (m/s)</td></tr>
+        <tr><td>wind_deg</td><td>int</td><td>Wind direction (degrees)</td></tr>
+        <tr><td>visibility_m</td><td>float</td><td>Visibility (metres)</td></tr>
+        <tr><td>clouds_pct</td><td>int</td><td>Cloud cover (%)</td></tr>
+        <tr><td>precipitation</td><td>float</td><td>Precipitation in current hour (mm)</td></tr>
+        <tr><td>weather_code</td><td>int</td><td>WMO weather interpretation code</td></tr>
+        <tr><td>weather_main</td><td>str</td><td>Simplified category (Clear / Clouds / Rain / Snow / Fog / Thunderstorm)</td></tr>
+        <tr><td>weather_desc</td><td>str</td><td>Human-readable description (e.g. "Moderate rain")</td></tr>
+        <tr><td>fetched_at</td><td>str</td><td>UTC timestamp of fetch (HH:MM UTC)</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ═══════════════════ MAP DETAIL ═══════════════════ -->
+  <section id="map">
+    <div class="section-label">Map Feature</div>
+    <h2>Route Map — Folium Integration</h2>
+    <p>The route map is rendered on the <em>Predict a Flight</em> page using <code>folium</code> and mounted into
+    Streamlit with <code>streamlit-folium</code>.</p>
+
+    <div class="callout" style="--accent:var(--orange)">
+      <strong>Dependency check:</strong> The app imports folium inside a try/except block. If the package is absent
+      (<code>FOLIUM_AVAILABLE = False</code>), the map section is gracefully hidden and a pip install hint is shown.
+    </div>
+
+    <h3>Map Components</h3>
+    <table class="field-table">
+      <thead><tr><th>Component</th><th>Details</th></tr></thead>
+      <tbody>
+        <tr><td>Base tile</td><td>CartoDB Dark Matter — matches the app's dark theme</td></tr>
+        <tr><td>Origin marker</td><td>Blue circle icon; popup shows live weather summary</td></tr>
+        <tr><td>Destination marker</td><td>Red circle icon; popup shows live weather summary</td></tr>
+        <tr><td>Flight path</td><td>Polyline coloured by weather risk score (green / orange / red), weight 4</td></tr>
+        <tr><td>Risk caption</td><td>Displayed below map: route name, line colour meaning, risk score / 10</td></tr>
+        <tr><td>Dimensions</td><td>700 × 420 px inside Streamlit via <code>st_folium()</code></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ═══════════════════ RECORD LAYOUT ═══════════════════ -->
+  <section id="record-layout">
+    <div class="section-label">Data Dictionary</div>
+    <h2>Record Layout</h2>
+    <p>Fields from the TranStats On-Time database in the order they appear in the dataset:</p>
+
+    <table class="field-table">
+      <thead>
+        <tr><th>Field</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Year</td><td>Year</td></tr>
+        <tr><td>Quarter</td><td>Quarter (1–4)</td></tr>
+        <tr><td>Month</td><td>Month</td></tr>
+        <tr><td>DayofMonth</td><td>Day of Month</td></tr>
+        <tr><td>DayOfWeek</td><td>Day of Week</td></tr>
+        <tr><td>FlightDate</td><td>Flight Date (yyyymmdd)</td></tr>
+        <tr><td>Marketing_Airline_Network</td><td>Unique Marketing Carrier Code — use for analysis across years</td></tr>
+        <tr><td>Operated_or_Branded_Code_Share_Partners</td><td>Reporting Carrier Operated or Branded Code Share Partners</td></tr>
+        <tr><td>DOT_ID_Marketing_Airline</td><td>US DOT unique airline identifier</td></tr>
+        <tr><td>IATA_Code_Marketing_Airline</td><td>IATA carrier code (not always unique over time)</td></tr>
+        <tr><td>Flight_Number_Marketing_Airline</td><td>Flight Number</td></tr>
+        <tr><td>Originally_Scheduled_Code_Share_Airline</td><td>Unique Scheduled Operating Carrier Code</td></tr>
+        <tr><td>DOT_ID_Originally_Scheduled_Code_Share_Airline</td><td>DOT ID for scheduled operating carrier</td></tr>
+        <tr><td>IATA_Code_Originally_Scheduled_Code_Share_Airline</td><td>IATA code for scheduled operating carrier</td></tr>
+        <tr><td>Flight_Num_Originally_Scheduled_Code_Share_Airline</td><td>Flight Number (scheduled operating carrier)</td></tr>
+        <tr><td>Operating_Airline</td><td>Unique Carrier Code — use for analysis across years</td></tr>
+        <tr><td>DOT_ID_Operating_Airline</td><td>DOT ID for operating carrier</td></tr>
+        <tr><td>IATA_Code_Operating_Airline</td><td>IATA code for operating carrier</td></tr>
+        <tr><td>Tail_Number</td><td>Aircraft Tail Number</td></tr>
+        <tr><td>Flight_Number_Operating_Airline</td><td>Flight Number (operating carrier)</td></tr>
+        <tr><td>OriginAirportID</td><td>Origin airport DOT ID — stable across airport code changes</td></tr>
+        <tr><td>OriginAirportSeqID</td><td>Origin airport sequence ID — point-in-time identifier</td></tr>
+        <tr><td>OriginCityMarketID</td><td>City Market ID — consolidates multiple airports in same city</td></tr>
+        <tr><td>Origin</td><td>Origin Airport Code</td></tr>
+        <tr><td>OriginCityName</td><td>Origin City Name</td></tr>
+        <tr><td>OriginState</td><td>Origin State Code</td></tr>
+        <tr><td>OriginStateFips</td><td>Origin State FIPS code</td></tr>
+        <tr><td>OriginStateName</td><td>Origin State Name</td></tr>
+        <tr><td>OriginWac</td><td>Origin World Area Code</td></tr>
+        <tr><td>DestAirportID</td><td>Destination airport DOT ID</td></tr>
+        <tr><td>DestAirportSeqID</td><td>Destination airport sequence ID</td></tr>
+        <tr><td>DestCityMarketID</td><td>Destination City Market ID</td></tr>
+        <tr><td>Dest</td><td>Destination Airport Code</td></tr>
+        <tr><td>DestCityName</td><td>Destination City Name</td></tr>
+        <tr><td>DestState</td><td>Destination State Code</td></tr>
+        <tr><td>DestStateFips</td><td>Destination State FIPS code</td></tr>
+        <tr><td>DestStateName</td><td>Destination State Name</td></tr>
+        <tr><td>DestWac</td><td>Destination World Area Code</td></tr>
+        <tr><td>CRSDepTime</td><td>Scheduled Departure Time (local hhmm)</td></tr>
+        <tr><td>DepTime</td><td>Actual Departure Time (local hhmm)</td></tr>
+        <tr><td>DepDelay</td><td>Departure delay in minutes (negative = early)</td></tr>
+        <tr><td>DepDelayMinutes</td><td>Departure delay in minutes — early departures set to 0</td></tr>
+        <tr><td>DepDel15</td><td>Departure Delay ≥ 15 min indicator (1=Yes)</td></tr>
+        <tr><td>DepartureDelayGroups</td><td>Delay interval every 15 min from &lt;-15 to &gt;180</td></tr>
+        <tr><td>DepTimeBlk</td><td>CRS Departure Time Block (hourly intervals)</td></tr>
+        <tr><td>TaxiOut</td><td>Taxi-out time (minutes)</td></tr>
+        <tr><td>WheelsOff</td><td>Wheels-off time (local hhmm)</td></tr>
+        <tr><td>WheelsOn</td><td>Wheels-on time (local hhmm)</td></tr>
+        <tr><td>TaxiIn</td><td>Taxi-in time (minutes)</td></tr>
+        <tr><td>CRSArrTime</td><td>Scheduled Arrival Time (local hhmm)</td></tr>
+        <tr><td>ArrTime</td><td>Actual Arrival Time (local hhmm)</td></tr>
+        <tr><td>ArrDelay</td><td>Arrival delay in minutes (negative = early)</td></tr>
+        <tr><td>ArrDelayMinutes</td><td>Arrival delay in minutes — early arrivals set to 0</td></tr>
+        <tr><td>ArrDel15</td><td>Arrival Delay ≥ 15 min indicator (1=Yes)</td></tr>
+        <tr><td>ArrivalDelayGroups</td><td>Arrival delay interval every 15 min</td></tr>
+        <tr><td>ArrTimeBlk</td><td>CRS Arrival Time Block (hourly intervals)</td></tr>
+        <tr><td>Cancelled</td><td>Cancelled Flight Indicator (1=Yes)</td></tr>
+        <tr><td>CancellationCode</td><td>Reason for cancellation</td></tr>
+        <tr><td>Diverted</td><td>Diverted Flight Indicator (1=Yes)</td></tr>
+        <tr><td>CRSElapsedTime</td><td>Scheduled elapsed flight time (minutes)</td></tr>
+        <tr><td>ActualElapsedTime</td><td>Actual elapsed flight time (minutes)</td></tr>
+        <tr><td>AirTime</td><td>Airborne time (minutes)</td></tr>
+        <tr><td>Flights</td><td>Number of Flights</td></tr>
+        <tr><td>Distance</td><td>Distance between airports (miles)</td></tr>
+        <tr><td>DistanceGroup</td><td>Distance interval (every 250 miles)</td></tr>
+        <tr><td>CarrierDelay</td><td>Carrier Delay (minutes)</td></tr>
+        <tr><td>WeatherDelay</td><td>Weather Delay (minutes)</td></tr>
+        <tr><td>NASDelay</td><td>National Air System Delay (minutes)</td></tr>
+        <tr><td>SecurityDelay</td><td>Security Delay (minutes)</td></tr>
+        <tr><td>LateAircraftDelay</td><td>Late Aircraft Delay (minutes)</td></tr>
+        <tr><td>FirstDepTime</td><td>First gate departure time at origin</td></tr>
+        <tr><td>TotalAddGTime</td><td>Total ground time away from gate (gate return / cancelled)</td></tr>
+        <tr><td>LongestAddGTime</td><td>Longest time away from gate (gate return / cancelled)</td></tr>
+        <tr><td>DivAirportLandings</td><td>Number of diverted airport landings</td></tr>
+        <tr><td>DivReachedDest</td><td>Diverted flight reached scheduled destination (1=Yes)</td></tr>
+        <tr><td>DivActualElapsedTime</td><td>Elapsed time for diverted flight reaching scheduled destination (minutes)</td></tr>
+        <tr><td>DivArrDelay</td><td>Arrival delay for diverted flight reaching scheduled destination (minutes)</td></tr>
+        <tr><td>DivDistance</td><td>Distance from scheduled destination to final diverted airport (miles; 0 if reached destination)</td></tr>
+        <tr><td>Div1Airport … Div5Airport</td><td>Diverted airport codes 1–5</td></tr>
+        <tr><td>Div1AirportID … Div5AirportID</td><td>DOT Airport IDs for diverted airports 1–5</td></tr>
+        <tr><td>Div1AirportSeqID … Div5AirportSeqID</td><td>Sequence IDs for diverted airports 1–5</td></tr>
+        <tr><td>Div1WheelsOn … Div5WheelsOn</td><td>Wheels-on time at diverted airport 1–5 (local hhmm)</td></tr>
+        <tr><td>Div1TotalGTime … Div5TotalGTime</td><td>Total ground time at diverted airport 1–5</td></tr>
+        <tr><td>Div1LongestGTime … Div5LongestGTime</td><td>Longest ground time at diverted airport 1–5</td></tr>
+        <tr><td>Div1WheelsOff … Div5WheelsOff</td><td>Wheels-off time at diverted airport 1–5 (local hhmm)</td></tr>
+        <tr><td>Div1TailNum … Div5TailNum</td><td>Aircraft tail number at diverted airport 1–5</td></tr>
+        <tr><td>Duplicate</td><td>Y if flight is swapped based on Form-3A data</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ═══════════════════ REAL DATASET ═══════════════════ -->
+  <section id="dataset">
+    <div class="section-label">Data</div>
+    <h2>Using the Real Kaggle Dataset</h2>
+    <p>
+      Download <code>flight_delay_dataset.csv</code> from
+      <a href="https://kaggle.com/datasets/shubhamsingh42/flight-delay-dataset-2018-2024" target="_blank">Kaggle</a>
+      and swap out the synthetic generator:
+    </p>
+    <pre>import pandas as pd
+
+df = pd.read_csv("flight_delay_dataset.csv")
+
+# Add target column if absent
+df["IS_DELAYED"] = (df["DEP_DELAY"] >= 15).astype(int)
+
+# Then in app.py replace generate_flight_data() with:
+# df = pd.read_csv("flight_delay_dataset.csv")
+# df["IS_DELAYED"] = (df["DEP_DELAY"] >= 15).astype(int)</pre>
+  </section>
+
+</div><!-- /container -->
+
+<footer>
+  <p>Flight Delay Prediction System · Aerospace &amp; ML Project</p>
+  <p style="margin-top:0.4rem">
+    Dataset: <a href="https://kaggle.com/datasets/shubhamsingh42/flight-delay-dataset-2018-2024">Kaggle 2018–2024</a> ·
+    Weather: <a href="https://open-meteo.com/">Open-Meteo</a> (free, no API key) ·
+    Maps: <a href="https://python-visualization.github.io/folium/">Folium</a>
+  </p>
+</footer>
+
+</BODY>
+</html>
+
