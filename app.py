@@ -412,7 +412,7 @@ st.markdown(f"""
         margin-bottom: 24px;
     }}
     .page-title {{
-        font-family: var(--font-display) !important; font-size: 38px; font-weight: 700;
+        font-family: var(--font-display) !important; font-size: 28px; font-weight: 700;
         letter-spacing: 3px; text-transform: uppercase; color: var(--text) !important;
         line-height: 1;
     }}
