@@ -344,13 +344,13 @@ st.markdown(f"""
 
     .logo {{
         font-family: var(--font-display) !important;
-        font-size: 28px; font-weight: 700; letter-spacing: 3px;
+        font-size: 42px; font-weight: 700; letter-spacing: 3px;
         color: var(--accent) !important; text-transform: uppercase;
-        display: flex; align-items: center; gap: 10px;
+        display: flex; align-items: center; gap: 12px;
     }}
     .logo span, .logo * {{ color: var(--accent) !important; }}
     .logo-icon {{
-        width: 36px; height: 36px;
+        width: 46px; height: 46px;
         border: 2px solid var(--accent);
         transform: rotate(45deg);
         display: flex; align-items: center; justify-content: center;
@@ -360,7 +360,7 @@ st.markdown(f"""
         0%,100% {{ box-shadow: 0 0 0 0 rgba(0,200,255,0.4); }}
         50% {{ box-shadow: 0 0 0 6px rgba(0,200,255,0); }}
     }}
-    .logo-icon span {{ transform: rotate(-45deg); font-size: 18px; display: inline-block; }}
+    .logo-icon span {{ transform: rotate(-45deg); font-size: 22px; display: inline-block; }}
 
     .live-badge {{
         font-family: var(--font-mono) !important; font-size: 11px;
