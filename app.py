@@ -83,9 +83,9 @@ if not st.session_state.trained:
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 with st.sidebar:
-    # Sidebar logo/icon at the top
     st.markdown("""
-    <div style="text-align: center; padding: 15px 0 5px 0;">
+    <div style="text-align: center; padding: 15px 0 5px 0; display: flex; flex-direction: column; align-items: center;">
+      <div class="logo-icon" style="margin-bottom: 15px;"><span style="color: var(--accent) !important;">✈</span></div>
       <div style="font-family: 'Rajdhani', sans-serif; font-size: 26px; font-weight: 700; color: #00c8ff; letter-spacing: 3px; text-transform: uppercase;">
         AEROSIGHT
       </div>
