@@ -304,4 +304,3 @@ Fields from the TranStats On-Time database in order of appearance:
 ---
 
 *Weather data provided by [Open-Meteo](https://open-meteo.com/) · Maps powered by [Folium](https://python-visualization.github.io/folium/)*
- 

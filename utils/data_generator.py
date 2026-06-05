@@ -209,4 +209,3 @@ def _estimate_distance(origin: str, dest: str) -> int:
     dlon = abs(lon2 - lon1)
     dist = int(np.sqrt(dlat**2 + dlon**2) * 69)  # degrees to miles approx
     return max(100, dist)
-

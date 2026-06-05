@@ -1,15 +1,7 @@
-# Core
-streamlit>=1.35.0
-pandas>=2.0.0
-numpy>=1.26.0
-requests>=2.31.0
- 
-# ML
-scikit-learn>=1.4.0
- 
-# Visualisation
-plotly>=5.22.0
- 
-# Map (optional — remove if not needed)
-folium>=0.16.0
-streamlit-folium>=0.20.0
+streamlit
+pandas
+numpy
+scikit-learn
+matplotlib
+seaborn
+joblib

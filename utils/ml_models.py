@@ -82,19 +82,10 @@ class FlightDelayPredictor:
         self.y_test = y_test
 
         model_configs = {
-            "Random Forest": RandomForestClassifier(
-                n_estimators=100, max_depth=12, min_samples_split=5,
-                random_state=42, n_jobs=-1, class_weight="balanced"
-            ),
             "Gradient Boosting": GradientBoostingClassifier(
                 n_estimators=100, max_depth=5, learning_rate=0.1,
                 random_state=42
             ),
-            "Logistic Regression": Pipeline([
-                ("imputer", SimpleImputer(strategy="mean")),
-                ("scaler", StandardScaler()),
-                ("clf", LogisticRegression(max_iter=500, random_state=42, class_weight="balanced")),
-            ]),
         }
 
         for name, model in model_configs.items():
@@ -128,7 +119,7 @@ class FlightDelayPredictor:
         self.is_trained = True
         return self.metrics
 
-    def predict(self, input_dict: dict, model_name: str = "Random Forest") -> dict:
+    def predict(self, input_dict: dict, model_name: str = "Gradient Boosting") -> dict:
         """Predict delay for a single flight."""
         if not self.is_trained:
             return {"error": "Model not trained yet"}
@@ -185,4 +176,3 @@ def _risk_label(prob: float) -> str:
         return "High"
     else:
         return "Very High"
- 

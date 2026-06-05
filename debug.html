@@ -1,0 +1,618 @@
+
+    <div style="text-align: center; padding: 15px 0 5px 0;">
+      <div style="font-family: 'Rajdhani', sans-serif; font-size: 26px; font-weight: 700; color: #00c8ff; letter-spacing: 3px; text-transform: uppercase;">
+        AEROSIGHT
+      </div>
+      <div style="font-family: 'Share Tech Mono', monospace; font-size: 9px; color: #3a7090; letter-spacing: 1px; margin-top: 5px;">
+        FLIGHT DELAY PREDICTION SYSTEM
+      </div>
+    </div>
+    <div class='sidebar-section-label'>Navigation</div><div class='sidebar-section-label'>Settings</div>
+    <div class="sidebar-status">
+      <div class="status-row">
+        <span>ML Engine</span>
+        <div style="display:flex;align-items:center;gap:6px">
+          <div class="status-dot"></div>
+          <span style="color:#00e5a0">READY</span>
+        </div>
+      </div>
+      <div class="status-row">
+        <span>Weather API</span>
+        <div style="display:flex;align-items:center;gap:6px">
+          <div class="status-dot"></div>
+          <span style="color:#00e5a0">LIVE</span>
+        </div>
+      </div>
+      <div class="status-row">
+        <span>Models</span>
+        <span style="color:#00c8ff">3 LOADED</span>
+      </div>
+      <div class="status-row">
+        <span>Dataset</span>
+        <span style="color:#00c8ff">2018–2024</span>
+      </div>
+    </div>
+    
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Exo+2:wght@300;400;500;600;700&display=swap');
+
+    
+    :root {
+        --bg: #020c18;
+        --bg2: #040f20;
+        --panel: #071629;
+        --panel2: #0a1e38;
+        --border: rgba(0,180,255,0.18);
+        --border-bright: rgba(0,200,255,0.45);
+        --accent: #00c8ff;
+        --accent2: #0066ff;
+        --accent3: #7c3aed;
+        --text: #e8f4ff;
+        --text2: #7fb8d8;
+        --text3: #3a7090;
+        --green: #00e5a0;
+        --amber: #ffb300;
+        --red: #ff4444;
+        --font-display: 'Rajdhani', sans-serif;
+        --font-body: 'Exo 2', sans-serif;
+        --font-mono: 'Share Tech Mono', monospace;
+    }
+    
+
+    *, *::before, *::after { box-sizing: border-box; }
+
+    /* Streamlit Global Styles */
+    html, body, [class*="stApp"] {
+        font-family: var(--font-body) !important;
+        background: var(--bg) !important;
+        color: var(--text) !important;
+        min-height: 100vh;
+        transition: background 0.3s, color 0.3s;
+    }
+    div[data-testid="stAppViewContainer"],
+    div[data-testid="stMain"],
+    div[data-testid="stHeader"],
+    .main,
+    .main .block-container {
+        background-color: var(--bg) !important;
+        padding: 1.5rem 3rem !important;
+        max-width: 100%;
+    }
+    
+    /* Text Color Fixes (prevents black-on-black text) */
+    p, span, li, a, td, th, label {
+        color: var(--text) !important;
+        font-family: var(--font-body) !important;
+    }
+    h1, h2, h3, h4, h5, h6 {
+        color: var(--text) !important;
+        font-family: var(--font-display) !important;
+    }
+    
+    /* Harmonious Cyberpunk Color Overrides */
+    .logo, .logo *, .logo-icon, .logo-icon * { color: var(--accent) !important; }
+    .live-badge { color: var(--green) !important; border-color: var(--green) !important; }
+    .clock { color: var(--text2) !important; }
+    .delta-up { color: var(--red) !important; }
+    .delta-down { color: var(--green) !important; }
+    .result-high, .result-high * { color: var(--red) !important; }
+    .result-low, .result-low * { color: var(--green) !important; }
+    .badge-green { color: var(--green) !important; border-color: var(--green) !important; background: rgba(0,229,160,0.08) !important; }
+    .badge-red { color: var(--red) !important; border-color: var(--red) !important; background: rgba(255,68,68,0.08) !important; }
+    .badge-amber { color: var(--amber) !important; border-color: var(--amber) !important; background: rgba(255,179,0,0.08) !important; }
+    .wx-airport { color: var(--accent) !important; }
+    .sidebar-section-label { color: var(--text3) !important; }
+    .status-row span { color: var(--text3) !important; }
+    
+    /* Sidebar overrides */
+    div[data-testid="stSidebar"] {
+        background: var(--panel) !important;
+        border-right: 1px solid var(--border) !important;
+        padding-top: 20px !important;
+    }
+    div[data-testid="stSidebar"] * {
+        color: var(--text2) !important;
+    }
+    /* Top Bar styles */
+    .topbar {
+        background: var(--panel);
+        border-bottom: 1px solid var(--border-bright);
+        display: flex; align-items: center; padding: 12px 24px; gap: 20px;
+        position: relative; z-index: 100;
+        margin-bottom: 25px;
+        border-radius: 4px;
+        justify-content: space-between;
+    }
+    .topbar::after {
+        content: ''; position: absolute; bottom: 0; left: 0; right: 0;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, var(--accent), var(--accent2), var(--accent3), transparent);
+        animation: scan 4s linear infinite;
+    }
+    @keyframes scan { 0%{background-position:0% 50%} 100%{background-position:200% 50%} }
+
+    .logo {
+        font-family: var(--font-display);
+        font-size: 28px; font-weight: 700; letter-spacing: 3px;
+        color: var(--accent); text-transform: uppercase;
+        display: flex; align-items: center; gap: 10px;
+    }
+    .logo-icon {
+        width: 36px; height: 36px;
+        border: 2px solid var(--accent);
+        transform: rotate(45deg);
+        display: flex; align-items: center; justify-content: center;
+        animation: pulse-border 2s infinite;
+    }
+    @keyframes pulse-border {
+        0%,100% { box-shadow: 0 0 0 0 rgba(0,200,255,0.4); }
+        50% { box-shadow: 0 0 0 6px rgba(0,200,255,0); }
+    }
+    .logo-icon span { transform: rotate(-45deg); font-size: 18px; display: inline-block; }
+
+    .live-badge {
+        font-family: var(--font-mono); font-size: 11px;
+        background: rgba(0,229,160,0.12);
+        color: var(--green); border: 1px solid var(--green);
+        padding: 3px 10px; letter-spacing: 1px; text-transform: uppercase;
+        position: relative; overflow: hidden;
+    }
+    .clock {
+        font-family: var(--font-mono); font-size: 18px; color: var(--text2);
+        letter-spacing: 2px;
+    }
+
+    /* Sidebar overrides duplicates removed */
+    .sidebar-section-label {
+        font-family: var(--font-mono); font-size: 10px;
+        color: var(--text3); letter-spacing: 2px; text-transform: uppercase;
+        padding: 0 20px; margin: 18px 0 8px;
+    }
+    .sidebar-status {
+        padding: 16px 20px;
+        border-top: 1px solid var(--border);
+        margin-top: 20px;
+    }
+    .status-row {
+        display: flex; justify-content: space-between; align-items: center;
+        font-family: var(--font-mono); font-size: 11px; color: var(--text3);
+        padding: 4px 0;
+    }
+    .status-dot {
+        width: 7px; height: 7px; border-radius: 50%;
+        background: var(--green);
+        box-shadow: 0 0 6px var(--green);
+        display: inline-block;
+    }
+
+    /* Sidebar Navigation stRadio overrides */
+    div[data-testid="stSidebar"] div[data-testid="stRadio"] {
+        padding: 0 !important;
+    }
+    div[data-testid="stSidebar"] div[data-testid="stRadio"] label {
+        display: flex !important;
+        align-items: center !important;
+        gap: 12px !important;
+        padding: 10px 20px !important;
+        cursor: pointer !important;
+        font-family: var(--font-display) !important;
+        font-size: 15px !important;
+        font-weight: 600 !important;
+        letter-spacing: 1px !important;
+        text-transform: uppercase !important;
+        color: var(--text2) !important;
+        background: transparent !important;
+        border-left: 3px solid transparent !important;
+        transition: all 0.2s !important;
+        margin-bottom: 2px !important;
+        border-radius: 0px !important;
+    }
+    div[data-testid="stSidebar"] div[data-testid="stRadio"] label:hover {
+        color: var(--text) !important;
+        background: rgba(0,200,255,0.05) !important;
+    }
+    div[data-testid="stSidebar"] div[data-testid="stRadio"] label:has(input:checked),
+    div[data-testid="stSidebar"] div[data-testid="stRadio"] label:has(span[data-checked="true"]),
+    div[data-testid="stSidebar"] div[data-testid="stRadio"] label[data-checked="true"] {
+        color: var(--accent) !important;
+        border-left-color: var(--accent) !important;
+        background: rgba(0,200,255,0.07) !important;
+    }
+    /* Hide radio dots completely by hiding the radio input visual circle container */
+    div[data-testid="stSidebar"] div[data-testid="stRadio"] label > div:first-child {
+        display: none !important;
+    }
+    div[data-testid="stSidebar"] div[data-testid="stRadio"] label [class*="StyledRadioContainer"],
+    div[data-testid="stSidebar"] div[data-testid="stRadio"] label [class*="StyledRadioCircle"] {
+        display: none !important;
+    }
+    div[data-testid="stSidebar"] div[data-testid="stRadio"] label input {
+        display: none !important;
+    }
+
+    /* Page Header */
+    .page-header {
+        display: flex; align-items: flex-end; justify-content: space-between;
+        padding-bottom: 16px;
+        border-bottom: 1px solid var(--border);
+        margin-bottom: 24px;
+    }
+    .page-title {
+        font-family: var(--font-display); font-size: 38px; font-weight: 700;
+        letter-spacing: 3px; text-transform: uppercase; color: var(--text) !important;
+        line-height: 1;
+    }
+    .page-title span { color: var(--accent); }
+    .page-subtitle {
+        font-family: var(--font-mono); font-size: 12px; color: var(--text3);
+        letter-spacing: 1.5px; margin-top: 6px;
+    }
+    .page-tag {
+        font-family: var(--font-mono); font-size: 11px;
+        color: var(--accent2); border: 1px solid var(--accent2);
+        padding: 4px 12px; letter-spacing: 1px;
+    }
+
+    /* Card Panels */
+    .card {
+        background: var(--panel) !important;
+        border: 1px solid var(--border) !important;
+        padding: 22px !important;
+        position: relative !important;
+        overflow: hidden !important;
+        border-radius: 4px !important;
+        margin-bottom: 20px !important;
+    }
+    .card-title {
+        font-family: var(--font-display) !important;
+        font-size: 14px; font-weight: 700;
+        letter-spacing: 2px; text-transform: uppercase; color: var(--text2) !important;
+        margin-bottom: 18px; display: flex; align-items: center; gap: 10px;
+    }
+    .card-title::before {
+        content: ''; width: 12px; height: 2px; background: var(--accent);
+        flex-shrink: 0;
+    }
+
+    /* KPI strip */
+    .kpi-strip {
+        display: grid !important;
+        grid-template-columns: repeat(4, 1fr) !important;
+        gap: 16px !important;
+        margin-bottom: 24px !important;
+    }
+    .kpi-card {
+        background: var(--panel) !important; border: 1px solid var(--border) !important;
+        border-top: 2px solid var(--accent) !important;
+        padding: 18px 20px !important; position: relative !important; overflow: hidden !important;
+        transition: border-color 0.2s, transform 0.2s !important;
+    }
+    .kpi-card:hover { border-color: var(--border-bright) !important; transform: translateY(-2px) !important; }
+    .kpi-label {
+        font-family: var(--font-mono) !important; font-size: 10px !important;
+        color: var(--text3) !important; letter-spacing: 2px; text-transform: uppercase;
+        margin-bottom: 8px;
+    }
+    .kpi-value {
+        font-family: var(--font-display) !important; font-size: 34px !important; font-weight: 700 !important;
+        letter-spacing: 1px; color: var(--text) !important; line-height: 1;
+    }
+    .kpi-delta {
+        font-family: var(--font-mono) !important; font-size: 11px !important;
+        margin-top: 6px; display: flex; align-items: center; gap: 6px;
+    }
+    .delta-up { color: var(--red) !important; }
+    .delta-down { color: var(--green) !important; }
+    .kpi-bar {
+        position: absolute; bottom: 0; left: 0; height: 3px;
+        background: linear-gradient(90deg, var(--accent), var(--accent2));
+        transition: width 1.2s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    /* Form Overrides */
+    .stSelectbox > div > div, .stMultiSelect > div, .stSlider > div, .stTextInput > div > div {
+        background-color: var(--bg2) !important;
+        border: 1px solid var(--border) !important;
+        border-radius: 0px !important;
+    }
+    .stSelectbox label, .stMultiSelect label, .stSlider label, .stTextInput label, .stRadio label {
+        font-family: var(--font-mono) !important;
+        font-size: 10px !important;
+        color: var(--text3) !important;
+        letter-spacing: 2px !important;
+        text-transform: uppercase !important;
+    }
+    .stSelectbox div[role="button"] *, .stMultiSelect span * {
+        color: var(--text) !important;
+        font-family: var(--font-mono) !important;
+    }
+    .stButton > button {
+        margin-top: 18px !important; width: 100% !important; padding: 14px !important;
+        background: transparent !important;
+        border: 1px solid var(--accent) !important;
+        color: var(--accent) !important;
+        font-family: var(--font-display) !important; font-size: 18px !important; font-weight: 700 !important;
+        letter-spacing: 3px; text-transform: uppercase; cursor: pointer !important;
+        border-radius: 0px !important;
+        transition: all 0.3s !important;
+    }
+    .stButton > button:hover {
+        background: var(--accent) !important;
+        color: var(--bg) !important;
+        box-shadow: 0 0 10px rgba(0, 200, 255, 0.4) !important;
+    }
+
+    /* Prediction Result Box */
+    .result-box {
+        padding: 24px; text-align: center; border: 1px solid var(--border);
+        background: var(--panel2); margin-top: 4px;
+        border-radius: 4px;
+        animation: fadeIn 0.5s ease;
+    }
+    @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+    .result-label {
+        font-family: var(--font-mono); font-size: 11px;
+        letter-spacing: 2px; text-transform: uppercase; color: var(--text3);
+        margin-bottom: 12px;
+    }
+    .result-prob {
+        font-family: var(--font-display); font-size: 72px; font-weight: 700;
+        line-height: 1; letter-spacing: 2px;
+    }
+    .result-verdict {
+        font-family: var(--font-display); font-size: 22px; font-weight: 600;
+        letter-spacing: 3px; margin-top: 8px; text-transform: uppercase;
+    }
+    .result-low { color: var(--green); }
+    .result-high { color: var(--red); }
+
+    /* SHAP Feature Contribution Tracks */
+    .feature-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+    .feature-name {
+        font-family: var(--font-mono); font-size: 11px; color: var(--text2);
+        min-width: 140px; letter-spacing: 0.5px;
+    }
+    .feature-track { flex: 1; height: 6px; background: var(--bg2); position: relative; }
+    .feature-fill {
+        position: absolute; top: 0; bottom: 0; left: 0;
+        background: linear-gradient(90deg, var(--accent2), var(--accent));
+        animation: expand 1.2s cubic-bezier(0.4,0,0.2,1) both;
+    }
+    .feature-pct {
+        font-family: var(--font-mono); font-size: 11px; color: var(--text3);
+        min-width: 36px; text-align: right;
+    }
+
+    /* Weather layouts */
+    .wx-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .wx-card {
+        background: var(--bg2); border: 1px solid var(--border);
+        border-left: 3px solid var(--accent); padding: 14px 16px;
+        border-radius: 4px;
+    }
+    .wx-airport {
+        font-family: var(--font-display); font-size: 24px; font-weight: 700;
+        letter-spacing: 2px; color: var(--accent);
+    }
+    .wx-city { font-family: var(--font-mono); font-size: 11px; color: var(--text3); margin-bottom: 12px; }
+    .wx-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0;
+        border-bottom: 1px solid rgba(0,180,255,0.06); font-size: 12px; }
+    .wx-row:last-child { border-bottom: none; }
+    .wx-key { font-family: var(--font-mono); color: var(--text3); font-size: 11px; letter-spacing: 1px; }
+    .wx-val { font-family: var(--font-display); font-weight: 600; font-size: 14px; color: var(--text); }
+
+    /* Risk meter styles */
+    .risk-bar-track { height: 8px; background: var(--bg2); position: relative; border: 1px solid var(--border); }
+    .risk-bar-fill { height: 100%; transition: width 1.2s cubic-bezier(0.4,0,0.2,1); }
+    .risk-labels {
+        display: flex; justify-content: space-between; margin-top: 4px;
+        font-family: var(--font-mono); font-size: 9px; color: var(--text3);
+        letter-spacing: 1px;
+    }
+
+    /* Data table styling */
+    .data-table { width: 100%; border-collapse: collapse; }
+    .data-table th {
+        font-family: var(--font-mono); font-size: 10px;
+        letter-spacing: 2px; text-transform: uppercase;
+        color: var(--text3); padding: 8px 12px;
+        border-bottom: 1px solid var(--border); text-align: left;
+    }
+    .data-table td {
+        padding: 10px 12px; font-family: var(--font-body); font-size: 13px;
+        color: var(--text); border-bottom: 1px solid rgba(0,180,255,0.06);
+    }
+    .data-table tr:hover td { background: rgba(0,200,255,0.03); }
+
+    /* Badges */
+    .badge {
+        display: inline-block; padding: 2px 10px;
+        font-family: var(--font-mono); font-size: 10px; letter-spacing: 1px;
+        text-transform: uppercase; border: 1px solid;
+    }
+    .badge-green { color: var(--green); border-color: var(--green); background: rgba(0,229,160,0.08); }
+    .badge-red { color: var(--red); border-color: var(--red); background: rgba(255,68,68,0.08); }
+    .badge-amber { color: var(--amber); border-color: var(--amber); background: rgba(255,179,0,0.08); }
+
+    /* Section divider */
+    .section-divider {
+        display: flex; align-items: center; gap: 14px; margin: 24px 0 16px;
+    }
+    .section-divider span {
+        font-family: var(--font-mono); font-size: 10px; color: var(--text3);
+        letter-spacing: 2px; text-transform: uppercase; white-space: nowrap;
+    }
+    .section-divider::before, .section-divider::after {
+        content: ''; flex: 1; height: 1px; background: var(--border);
+    }
+
+    /* Model Performance cards grid */
+    .model-grid { display: grid !important; grid-template-columns: repeat(3, 1fr) !important; gap: 14px !important; margin-bottom: 24px !important; }
+    .model-card {
+        background: var(--bg2) !important; border: 1px solid var(--border) !important;
+        border-top: 2px solid var(--accent3) !important;
+        padding: 16px !important; text-align: center !important;
+    }
+    .model-card:hover { border-color: var(--accent) !important; }
+    .model-name {
+        font-family: var(--font-display) !important; font-size: 16px !important; font-weight: 700 !important;
+        letter-spacing: 1px; text-transform: uppercase; color: var(--text) !important;
+        margin-bottom: 12px;
+    }
+    .model-metric { margin: 6px 0 !important; }
+    .model-metric-label { font-family: var(--font-mono) !important; font-size: 10px !important; color: var(--text3) !important; letter-spacing: 1px; }
+    .model-metric-val { font-family: var(--font-display) !important; font-size: 26px !important; font-weight: 700 !important; color: var(--accent) !important; }
+
+    /* Streamlit widgets overrides */
+    div[data-testid="stHeader"] {
+        background-color: transparent !important;
+    }
+    .stDataFrame {
+        border: 1px solid var(--border) !important;
+        border-radius: 4px !important;
+    }
+    
+    /* Tabs styling override */
+    .stTabs [data-baseweb="tab"] {
+        font-family: var(--font-display) !important;
+        font-size: 14px !important;
+        font-weight: 600 !important;
+        letter-spacing: 2px !important;
+        text-transform: uppercase !important;
+        color: var(--text3) !important;
+        transition: all 0.2s !important;
+        background: transparent !important;
+        border-bottom: 2px solid transparent !important;
+    }
+    .stTabs [aria-selected="true"] {
+        color: var(--accent) !important;
+        border-bottom: 2px solid var(--accent) !important;
+    }
+    .stTabs [data-baseweb="tab-list"] {
+        background: transparent !important;
+        border-bottom: 1px solid var(--border) !important;
+        gap: 1rem !important;
+    }
+</style>
+
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-icon"><span>✈</span></div>
+    AEROSIGHT
+  </div>
+  <span style="font-family:var(--font-mono);font-size:12px;color:var(--text3);letter-spacing:1px;margin-right:auto;margin-left:20px;">
+    FLIGHT DELAY PREDICTION SYSTEM
+  </span>
+  <div style="display:flex; align-items:center; gap:20px;">
+    <div class="live-badge">● LIVE</div>
+    <div class="clock" id="clock-widget">00:00:00</div>
+  </div>
+</div>
+<script>
+  function updateClockWidget(){
+    const n = new Date();
+    const el = document.getElementById('clock-widget');
+    if (el) {
+      el.textContent = n.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+    }
+  }
+  updateClockWidget();
+  setInterval(updateClockWidget,1000);
+</script>
+
+    <div class="page-header">
+      <div>
+        <div class="page-title">SYSTEM <span>OVERVIEW</span></div>
+        <div class="page-subtitle">REAL-TIME FLIGHT DELAY OPERATIONAL INTELLIGENCE · HISTORICAL KAGGLE DATASET</div>
+      </div>
+      <div class="page-tag">AUTO-REFRESH 30S</div>
+    </div>
+    <div class="card"><div class="card-title">📅 Filter Operations Period</div></div>
+    <div class="kpi-strip">
+      <div class="kpi-card">
+        <div class="kpi-label">Total Flights</div>
+        <div class="kpi-value">20.0K</div>
+        <div class="kpi-delta delta-up">↑ 3.1% YoY</div>
+        <div class="kpi-bar" style="width:74%"></div>
+      </div>
+      <div class="kpi-card" style="border-top-color:var(--red)">
+        <div class="kpi-label">Delay Rate</div>
+        <div class="kpi-value">21.0%</div>
+        <div class="kpi-delta delta-up">↑ 1.4pp</div>
+        <div class="kpi-bar" style="width:21.0%;background:linear-gradient(90deg,var(--red),#ff6b6b)"></div>
+      </div>
+      <div class="kpi-card" style="border-top-color:var(--green)">
+        <div class="kpi-label">Model Accuracy</div>
+        <div class="kpi-value">74.3%</div>
+        <div class="kpi-delta delta-down">↑ 2.1pp</div>
+        <div class="kpi-bar" style="width:74.3%;background:linear-gradient(90deg,var(--green),#34d399)"></div>
+      </div>
+      <div class="kpi-card" style="border-top-color:var(--amber)">
+        <div class="kpi-label">Avg Delay (min)</div>
+        <div class="kpi-value">32.5</div>
+        <div class="kpi-delta delta-up">↑ 4.8 min</div>
+        <div class="kpi-bar" style="width:48%;background:linear-gradient(90deg,var(--amber),#ffd54f)"></div>
+      </div>
+    </div>
+    <div class="card"><div class="card-title">Delay Rate by Airline</div></div><div class="card"><div class="card-title">Monthly Delay Trend 2024</div></div><div class="card"><div class="card-title">Top Delay Causes</div><div style='margin-top:4px'>
+              <div class="feature-row" style="--i:0">
+                <span class="feature-name">Carrier</span>
+                <div class="feature-track"><div class="feature-fill" style="width:100%"></div></div>
+                <span class="feature-pct">100%</span>
+              </div>
+            
+              <div class="feature-row" style="--i:1">
+                <span class="feature-name">Weather</span>
+                <div class="feature-track"><div class="feature-fill" style="width:78%"></div></div>
+                <span class="feature-pct">78%</span>
+              </div>
+            
+              <div class="feature-row" style="--i:2">
+                <span class="feature-name">Late Aircraft</span>
+                <div class="feature-track"><div class="feature-fill" style="width:46%"></div></div>
+                <span class="feature-pct">46%</span>
+              </div>
+            
+              <div class="feature-row" style="--i:3">
+                <span class="feature-name">NAS Delay</span>
+                <div class="feature-track"><div class="feature-fill" style="width:20%"></div></div>
+                <span class="feature-pct">20%</span>
+              </div>
+            
+              <div class="feature-row" style="--i:4">
+                <span class="feature-name">Security</span>
+                <div class="feature-track"><div class="feature-fill" style="width:3%"></div></div>
+                <span class="feature-pct">3%</span>
+              </div>
+            </div></div><div class="card"><div class="card-title">Risk Distribution</div>
+        <div class="risk-bar-wrap">
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+            <span style="font-family:var(--font-mono);font-size:11px;color:var(--green)">LOW RISK</span>
+            <span style="font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--green)">100%</span>
+          </div>
+          <div class="risk-bar-track"><div class="risk-bar-fill" style="width:100%;background:var(--green)"></div></div>
+          <div class="risk-labels"><span>0</span><span>50%</span><span>100%</span></div>
+
+          <div style="display:flex;justify-content:space-between;margin:16px 0 6px">
+            <span style="font-family:var(--font-mono);font-size:11px;color:var(--amber)">MOD RISK</span>
+            <span style="font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--amber)">0%</span>
+          </div>
+          <div class="risk-bar-track"><div class="risk-bar-fill" style="width:0%;background:var(--amber)"></div></div>
+
+          <div style="display:flex;justify-content:space-between;margin:16px 0 6px">
+            <span style="font-family:var(--font-mono);font-size:11px;color:var(--red)">HIGH RISK</span>
+            <span style="font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--red)">0%</span>
+          </div>
+          <div class="risk-bar-track"><div class="risk-bar-fill" style="width:0%;background:var(--red)"></div></div>
+        </div>
+        </div><div class="section-header"><span>💡 Operational Key Insights</span></div>
+            <div class="insight-card good">
+              <div class="i-title">🏆 Top Performer</div>
+              <div class="i-body"><b>Delta Air Lines</b> leads with 81.6% on-time performance (2,003 flights). Benchmark gap vs worst carrier: 74.6% (Spirit Airlines).</div>
+            </div>
+            
+            <div class="insight-card warn">
+              <div class="i-title">📅 Seasonal Peak</div>
+              <div class="i-body"><b>Jun</b> records the highest delay rate (22.6%). <b>Oct</b> is the most reliable month (18.5% delays).</div>
+            </div>
+            

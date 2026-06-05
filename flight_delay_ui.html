@@ -1,0 +1,1396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AeroSight — Flight Delay Prediction System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Exo+2:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #020c18;
+    --bg2: #040f20;
+    --panel: #071629;
+    --panel2: #0a1e38;
+    --border: rgba(0,180,255,0.18);
+    --border-bright: rgba(0,200,255,0.45);
+    --accent: #00c8ff;
+    --accent2: #0066ff;
+    --accent3: #7c3aed;
+    --text: #e8f4ff;
+    --text2: #7fb8d8;
+    --text3: #3a7090;
+    --green: #00e5a0;
+    --amber: #ffb300;
+    --red: #ff4444;
+    --header-h: 70px;
+    --sidebar-w: 220px;
+    --font-display: 'Rajdhani', sans-serif;
+    --font-body: 'Exo 2', sans-serif;
+    --font-mono: 'Share Tech Mono', monospace;
+  }
+  .light {
+    --bg: #f0f4fa;
+    --bg2: #e6edf7;
+    --panel: #ffffff;
+    --panel2: #eef3fb;
+    --border: rgba(0,100,200,0.15);
+    --border-bright: rgba(0,100,200,0.4);
+    --accent: #0055cc;
+    --accent2: #0033aa;
+    --accent3: #6d28d9;
+    --text: #0a1a30;
+    --text2: #2255aa;
+    --text3: #7090b8;
+    --green: #007a50;
+    --amber: #b36a00;
+    --red: #cc2200;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.5;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  /* ─── SCAN LINES OVERLAY ─────────────────────────────────────────────── */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; pointer-events: none; z-index: 9999;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.015) 2px,
+      rgba(0,0,0,0.015) 4px
+    );
+  }
+  .light body::before { display: none; }
+
+  /* ─── LAYOUT ──────────────────────────────────────────────────────────── */
+  .shell { display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+
+  /* ─── TOP BAR ─────────────────────────────────────────────────────────── */
+  .topbar {
+    height: var(--header-h);
+    background: var(--panel);
+    border-bottom: 1px solid var(--border-bright);
+    display: flex; align-items: center; padding: 0 24px; gap: 20px;
+    position: relative; z-index: 100; flex-shrink: 0;
+  }
+  .topbar::after {
+    content: ''; position: absolute; bottom: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), var(--accent2), var(--accent3), transparent);
+    animation: scan 4s linear infinite;
+  }
+  @keyframes scan { 0%{background-position:0% 50%} 100%{background-position:200% 50%} }
+
+  .logo {
+    font-family: var(--font-display);
+    font-size: 28px; font-weight: 700; letter-spacing: 3px;
+    color: var(--accent); text-transform: uppercase;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .logo-icon {
+    width: 36px; height: 36px;
+    border: 2px solid var(--accent);
+    transform: rotate(45deg);
+    display: flex; align-items: center; justify-content: center;
+    animation: pulse-border 2s infinite;
+  }
+  @keyframes pulse-border {
+    0%,100% { box-shadow: 0 0 0 0 rgba(0,200,255,0.4); }
+    50% { box-shadow: 0 0 0 6px rgba(0,200,255,0); }
+  }
+  .logo-icon span { transform: rotate(-45deg); font-size: 18px; }
+
+  .topbar-meta {
+    margin-left: auto; display: flex; align-items: center; gap: 20px;
+  }
+  .live-badge {
+    font-family: var(--font-mono); font-size: 11px;
+    background: rgba(0,229,160,0.12);
+    color: var(--green); border: 1px solid var(--green);
+    padding: 3px 10px; letter-spacing: 1px; text-transform: uppercase;
+    position: relative; overflow: hidden;
+  }
+  .live-badge::before {
+    content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+    width: 4px; background: var(--green);
+    animation: blink 1.2s step-end infinite;
+  }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  .clock {
+    font-family: var(--font-mono); font-size: 18px; color: var(--text2);
+    letter-spacing: 2px;
+  }
+
+  /* ─── THEME TOGGLE ────────────────────────────────────────────────────── */
+  .theme-row {
+    display: flex; align-items: center; gap: 10px;
+    font-family: var(--font-mono); font-size: 11px;
+    color: var(--text3); letter-spacing: 1px;
+  }
+  .theme-toggle {
+    width: 52px; height: 26px; background: var(--panel2);
+    border: 1px solid var(--border-bright); border-radius: 13px;
+    cursor: pointer; position: relative; transition: background 0.3s;
+    flex-shrink: 0;
+  }
+  .theme-toggle::after {
+    content: ''; position: absolute;
+    top: 3px; left: 3px;
+    width: 18px; height: 18px; border-radius: 50%;
+    background: var(--accent); transition: transform 0.3s;
+  }
+  .light .theme-toggle::after { transform: translateX(26px); }
+
+  /* ─── BODY SPLIT ──────────────────────────────────────────────────────── */
+  .body-wrap { display: flex; flex: 1; overflow: hidden; }
+
+  /* ─── SIDEBAR ─────────────────────────────────────────────────────────── */
+  .sidebar {
+    width: var(--sidebar-w); flex-shrink: 0;
+    background: var(--panel);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; padding: 20px 0; overflow-y: auto;
+  }
+  .sidebar-section-label {
+    font-family: var(--font-mono); font-size: 10px;
+    color: var(--text3); letter-spacing: 2px; text-transform: uppercase;
+    padding: 0 20px; margin: 18px 0 8px;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 20px; cursor: pointer;
+    font-family: var(--font-display); font-size: 15px; font-weight: 600;
+    letter-spacing: 1px; text-transform: uppercase;
+    color: var(--text2); transition: all 0.2s; position: relative;
+    border-left: 3px solid transparent;
+  }
+  .nav-item:hover { color: var(--text); background: rgba(0,200,255,0.05); }
+  .nav-item.active {
+    color: var(--accent); border-left-color: var(--accent);
+    background: rgba(0,200,255,0.07);
+  }
+  .nav-item .nav-icon { font-size: 18px; opacity: 0.7; }
+  .nav-item.active .nav-icon { opacity: 1; }
+
+  .sidebar-status {
+    margin-top: auto; padding: 16px 20px;
+    border-top: 1px solid var(--border);
+  }
+  .status-row {
+    display: flex; justify-content: space-between; align-items: center;
+    font-family: var(--font-mono); font-size: 11px; color: var(--text3);
+    padding: 4px 0;
+  }
+  .status-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 6px var(--green);
+    animation: blink 2s infinite;
+  }
+
+  /* ─── MAIN CONTENT ────────────────────────────────────────────────────── */
+  .main {
+    flex: 1; overflow-y: auto; padding: 28px;
+    display: flex; flex-direction: column; gap: 24px;
+  }
+
+  /* ─── PAGE HEADER ─────────────────────────────────────────────────────── */
+  .page-header {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .page-title {
+    font-family: var(--font-display); font-size: 38px; font-weight: 700;
+    letter-spacing: 3px; text-transform: uppercase; color: var(--text);
+    line-height: 1;
+  }
+  .page-title span { color: var(--accent); }
+  .page-subtitle {
+    font-family: var(--font-mono); font-size: 12px; color: var(--text3);
+    letter-spacing: 1.5px; margin-top: 6px;
+  }
+  .page-tag {
+    font-family: var(--font-mono); font-size: 11px;
+    color: var(--accent2); border: 1px solid var(--accent2);
+    padding: 4px 12px; letter-spacing: 1px;
+  }
+
+  /* ─── KPI STRIP ───────────────────────────────────────────────────────── */
+  .kpi-strip {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+  }
+  .kpi-card {
+    background: var(--panel); border: 1px solid var(--border);
+    border-top: 2px solid var(--accent);
+    padding: 18px 20px; position: relative; overflow: hidden;
+    transition: border-color 0.2s, transform 0.2s;
+    cursor: default;
+  }
+  .kpi-card:hover { border-color: var(--border-bright); transform: translateY(-2px); }
+  .kpi-card::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(0,200,255,0.04) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .kpi-label {
+    font-family: var(--font-mono); font-size: 10px;
+    color: var(--text3); letter-spacing: 2px; text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .kpi-value {
+    font-family: var(--font-display); font-size: 34px; font-weight: 700;
+    letter-spacing: 1px; color: var(--text); line-height: 1;
+  }
+  .kpi-delta {
+    font-family: var(--font-mono); font-size: 11px;
+    margin-top: 6px; display: flex; align-items: center; gap: 6px;
+  }
+  .delta-up { color: var(--red); }
+  .delta-down { color: var(--green); }
+  .kpi-bar {
+    position: absolute; bottom: 0; left: 0; height: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width 1.2s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  /* ─── TWO-COL GRID ────────────────────────────────────────────────────── */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+
+  /* ─── PANEL CARD ──────────────────────────────────────────────────────── */
+  .card {
+    background: var(--panel); border: 1px solid var(--border); padding: 22px;
+    position: relative; overflow: hidden;
+  }
+  .card-title {
+    font-family: var(--font-display); font-size: 14px; font-weight: 700;
+    letter-spacing: 2px; text-transform: uppercase; color: var(--text2);
+    margin-bottom: 18px; display: flex; align-items: center; gap: 10px;
+  }
+  .card-title::before {
+    content: ''; width: 12px; height: 2px; background: var(--accent);
+    flex-shrink: 0;
+  }
+
+  /* ─── PREDICTION FORM ─────────────────────────────────────────────────── */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .form-group { display: flex; flex-direction: column; gap: 6px; }
+  .form-label {
+    font-family: var(--font-mono); font-size: 10px;
+    color: var(--text3); letter-spacing: 2px; text-transform: uppercase;
+  }
+  .form-input {
+    background: var(--bg2); border: 1px solid var(--border);
+    color: var(--text); font-family: var(--font-mono); font-size: 14px;
+    padding: 10px 14px; outline: none; width: 100%;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    -webkit-appearance: none;
+  }
+  .form-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px rgba(0,200,255,0.1);
+  }
+  .form-input option { background: var(--panel); }
+
+  .predict-btn {
+    margin-top: 18px; width: 100%; padding: 14px;
+    background: transparent;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-family: var(--font-display); font-size: 18px; font-weight: 700;
+    letter-spacing: 3px; text-transform: uppercase; cursor: pointer;
+    position: relative; overflow: hidden; transition: all 0.3s;
+  }
+  .predict-btn::before {
+    content: ''; position: absolute; inset: 0;
+    background: var(--accent); transform: translateX(-101%);
+    transition: transform 0.3s;
+  }
+  .predict-btn:hover::before { transform: translateX(0); }
+  .predict-btn:hover { color: var(--bg); }
+  .predict-btn span { position: relative; z-index: 1; }
+
+  /* ─── RESULT PANEL ────────────────────────────────────────────────────── */
+  .result-box {
+    padding: 24px; text-align: center; border: 1px solid var(--border);
+    background: var(--panel2); margin-top: 4px;
+    animation: fadeIn 0.5s ease;
+  }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+  .result-label {
+    font-family: var(--font-mono); font-size: 11px;
+    letter-spacing: 2px; text-transform: uppercase; color: var(--text3);
+    margin-bottom: 12px;
+  }
+  .result-prob {
+    font-family: var(--font-display); font-size: 72px; font-weight: 700;
+    line-height: 1; letter-spacing: 2px;
+  }
+  .result-verdict {
+    font-family: var(--font-display); font-size: 22px; font-weight: 600;
+    letter-spacing: 3px; margin-top: 8px; text-transform: uppercase;
+  }
+  .result-low { color: var(--green); }
+  .result-high { color: var(--red); }
+
+  /* ─── GAUGE ───────────────────────────────────────────────────────────── */
+  .gauge-wrap { display: flex; flex-direction: column; align-items: center; padding: 10px 0; }
+  .gauge-svg { overflow: visible; }
+
+  /* ─── DATA TABLE ──────────────────────────────────────────────────────── */
+  .data-table { width: 100%; border-collapse: collapse; }
+  .data-table th {
+    font-family: var(--font-mono); font-size: 10px;
+    letter-spacing: 2px; text-transform: uppercase;
+    color: var(--text3); padding: 8px 12px;
+    border-bottom: 1px solid var(--border); text-align: left;
+  }
+  .data-table td {
+    padding: 10px 12px; font-family: var(--font-body); font-size: 13px;
+    color: var(--text); border-bottom: 1px solid rgba(0,180,255,0.06);
+  }
+  .data-table tr:hover td { background: rgba(0,200,255,0.03); }
+  .badge {
+    display: inline-block; padding: 2px 10px;
+    font-family: var(--font-mono); font-size: 10px; letter-spacing: 1px;
+    text-transform: uppercase; border: 1px solid;
+  }
+  .badge-green { color: var(--green); border-color: var(--green); background: rgba(0,229,160,0.08); }
+  .badge-red { color: var(--red); border-color: var(--red); background: rgba(255,68,68,0.08); }
+  .badge-amber { color: var(--amber); border-color: var(--amber); background: rgba(255,179,0,0.08); }
+
+  /* ─── WEATHER STRIP ───────────────────────────────────────────────────── */
+  .wx-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .wx-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-left: 3px solid var(--accent); padding: 14px 16px;
+  }
+  .wx-airport {
+    font-family: var(--font-display); font-size: 24px; font-weight: 700;
+    letter-spacing: 2px; color: var(--accent);
+  }
+  .wx-city { font-family: var(--font-mono); font-size: 11px; color: var(--text3); margin-bottom: 12px; }
+  .wx-row { display: flex; justify-content: space-between; align-items: center; padding: 5px 0;
+    border-bottom: 1px solid rgba(0,180,255,0.06); font-size: 12px; }
+  .wx-row:last-child { border-bottom: none; }
+  .wx-key { font-family: var(--font-mono); color: var(--text3); font-size: 11px; letter-spacing: 1px; }
+  .wx-val { font-family: var(--font-display); font-weight: 600; font-size: 14px; color: var(--text); }
+
+  /* ─── CHART CONTAINER ─────────────────────────────────────────────────── */
+  .chart-area {
+    height: 200px; position: relative; margin-top: 8px;
+    border-bottom: 1px solid var(--border); border-left: 1px solid var(--border);
+  }
+  .chart-bar-wrap { display: flex; align-items: flex-end; height: 100%; gap: 6px; padding: 0 8px; }
+  .chart-bar {
+    flex: 1; background: linear-gradient(to top, var(--accent2), var(--accent));
+    opacity: 0.7; position: relative; min-width: 20px;
+    transition: opacity 0.2s; cursor: pointer;
+    animation: grow 1s cubic-bezier(0.4,0,0.2,1) both;
+    animation-delay: calc(var(--i) * 0.06s);
+  }
+  @keyframes grow { from{transform:scaleY(0);transform-origin:bottom} to{transform:scaleY(1);transform-origin:bottom} }
+  .chart-bar:hover { opacity: 1; }
+  .chart-bar-label {
+    position: absolute; bottom: -22px; left: 50%; transform: translateX(-50%);
+    font-family: var(--font-mono); font-size: 9px; color: var(--text3);
+    white-space: nowrap; letter-spacing: 0.5px;
+  }
+
+  /* ─── ROC LINE CHART ──────────────────────────────────────────────────── */
+  .roc-wrap { position: relative; padding-bottom: 12px; }
+
+  /* ─── FEATURE BAR ─────────────────────────────────────────────────────── */
+  .feature-row { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .feature-name {
+    font-family: var(--font-mono); font-size: 11px; color: var(--text2);
+    min-width: 140px; letter-spacing: 0.5px;
+  }
+  .feature-track { flex: 1; height: 6px; background: var(--bg2); position: relative; }
+  .feature-fill {
+    position: absolute; inset-y: 0; left: 0;
+    background: linear-gradient(90deg, var(--accent2), var(--accent));
+    animation: expand 1.2s cubic-bezier(0.4,0,0.2,1) both;
+    animation-delay: calc(var(--i) * 0.08s);
+  }
+  @keyframes expand { from{width:0} }
+  .feature-pct {
+    font-family: var(--font-mono); font-size: 11px; color: var(--text3);
+    min-width: 36px; text-align: right;
+  }
+
+  /* ─── SCROLLBAR ───────────────────────────────────────────────────────── */
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border-bright); }
+
+  /* ─── MODEL CARDS ─────────────────────────────────────────────────────── */
+  .model-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; }
+  .model-card {
+    background: var(--bg2); border: 1px solid var(--border);
+    border-top: 2px solid var(--accent3);
+    padding: 16px; text-align: center;
+    transition: transform 0.2s, border-color 0.2s;
+  }
+  .model-card:hover { transform: translateY(-3px); border-color: var(--accent); }
+  .model-name {
+    font-family: var(--font-display); font-size: 16px; font-weight: 700;
+    letter-spacing: 1px; text-transform: uppercase; color: var(--text);
+    margin-bottom: 12px;
+  }
+  .model-metric { margin: 6px 0; }
+  .model-metric-label { font-family: var(--font-mono); font-size: 10px; color: var(--text3); letter-spacing: 1px; }
+  .model-metric-val { font-family: var(--font-display); font-size: 26px; font-weight: 700; color: var(--accent); }
+
+  /* ─── ROUTE MAP PLACEHOLDER ───────────────────────────────────────────── */
+  .map-placeholder {
+    height: 220px; background: var(--bg2); border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    position: relative; overflow: hidden;
+  }
+  .map-grid-lines {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(0,200,255,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,200,255,0.06) 1px, transparent 1px);
+    background-size: 30px 30px;
+  }
+  .map-route {
+    position: absolute; top: 50%; left: 15%; right: 15%;
+    height: 2px; background: linear-gradient(90deg, var(--green), var(--accent));
+    transform: translateY(-50%);
+    animation: dash 2s linear infinite;
+  }
+  @keyframes dash {
+    0% { clip-path: inset(0 100% 0 0); }
+    100% { clip-path: inset(0 0 0 0); }
+  }
+  .map-dot {
+    position: absolute; width: 14px; height: 14px;
+    border: 2px solid var(--accent); border-radius: 50%;
+    background: var(--bg2); top: 50%; transform: translateY(-50%);
+  }
+  .map-dot.origin { left: 15%; }
+  .map-dot.dest { right: 15%; }
+  .map-label {
+    position: absolute;
+    font-family: var(--font-display); font-size: 14px; font-weight: 700;
+    letter-spacing: 2px; color: var(--accent); top: 35%;
+  }
+  .map-label.origin { left: 14%; }
+  .map-label.dest { right: 14%; }
+  .map-prob {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+    font-family: var(--font-mono); font-size: 12px; color: var(--green);
+    background: var(--bg2); border: 1px solid var(--green);
+    padding: 4px 12px; letter-spacing: 1px; z-index: 1;
+  }
+
+  /* ─── TABS ────────────────────────────────────────────────────────────── */
+  .tab-bar {
+    display: flex; gap: 0; border-bottom: 1px solid var(--border);
+    margin-bottom: 22px;
+  }
+  .tab {
+    padding: 10px 20px; font-family: var(--font-display); font-size: 13px;
+    font-weight: 600; letter-spacing: 2px; text-transform: uppercase;
+    color: var(--text3); cursor: pointer; border-bottom: 2px solid transparent;
+    transition: all 0.2s; margin-bottom: -1px;
+  }
+  .tab:hover { color: var(--text2); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* ─── PAGE SECTIONS ───────────────────────────────────────────────────── */
+  .page { display: none; }
+  .page.active { display: flex; flex-direction: column; gap: 24px; }
+
+  /* ─── FULLSCREEN SECTIONS ─────────────────────────────────────────────── */
+  .section-divider {
+    display: flex; align-items: center; gap: 14px; margin: 8px 0 4px;
+  }
+  .section-divider span {
+    font-family: var(--font-mono); font-size: 10px; color: var(--text3);
+    letter-spacing: 2px; text-transform: uppercase; white-space: nowrap;
+  }
+  .section-divider::before, .section-divider::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+
+  /* ─── RISK METER ──────────────────────────────────────────────────────── */
+  .risk-bar-wrap { margin-top: 10px; }
+  .risk-bar-track { height: 8px; background: var(--bg2); position: relative; border: 1px solid var(--border); }
+  .risk-bar-fill { height: 100%; transition: width 1.2s cubic-bezier(0.4,0,0.2,1); }
+  .risk-labels {
+    display: flex; justify-content: space-between; margin-top: 4px;
+    font-family: var(--font-mono); font-size: 9px; color: var(--text3);
+    letter-spacing: 1px;
+  }
+
+  /* scrollable page */
+  .main { scrollbar-width: thin; scrollbar-color: var(--border-bright) var(--bg); }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- ════ TOP BAR ═══════════════════════════════════════════════════════ -->
+  <header class="topbar">
+    <div class="logo">
+      <div class="logo-icon"><span>✈</span></div>
+      AEROSIGHT
+    </div>
+    <span style="font-family:var(--font-mono);font-size:12px;color:var(--text3);letter-spacing:1px;">
+      FLIGHT DELAY PREDICTION SYSTEM
+    </span>
+    <div class="topbar-meta">
+      <div class="live-badge">● LIVE</div>
+      <div class="clock" id="clock">00:00:00</div>
+      <div class="theme-row">
+        <span id="theme-lbl">DARK</span>
+        <div class="theme-toggle" id="themeToggle" role="button" aria-label="Toggle theme" tabindex="0"></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ════ BODY ════════════════════════════════════════════════════════════ -->
+  <div class="body-wrap">
+
+    <!-- ── SIDEBAR ────────────────────────────────────────────────────── -->
+    <nav class="sidebar">
+      <div class="sidebar-section-label">Navigation</div>
+
+      <div class="nav-item active" data-page="dashboard" onclick="showPage('dashboard')">
+        <span class="nav-icon">◈</span> Dashboard
+      </div>
+      <div class="nav-item" data-page="predict" onclick="showPage('predict')">
+        <span class="nav-icon">◎</span> Prediction
+      </div>
+      <div class="nav-item" data-page="weather" onclick="showPage('weather')">
+        <span class="nav-icon">◇</span> Weather Intel
+      </div>
+      <div class="nav-item" data-page="models" onclick="showPage('models')">
+        <span class="nav-icon">◆</span> Model Performance
+      </div>
+      <div class="nav-item" data-page="data" onclick="showPage('data')">
+        <span class="nav-icon">▦</span> Flight Data
+      </div>
+
+      <div class="sidebar-section-label">System</div>
+      <div class="nav-item" data-page="about" onclick="showPage('about')">
+        <span class="nav-icon">◉</span> About
+      </div>
+
+      <div class="sidebar-status">
+        <div class="status-row">
+          <span>ML Engine</span>
+          <div style="display:flex;align-items:center;gap:6px">
+            <div class="status-dot"></div>
+            <span style="color:var(--green)">READY</span>
+          </div>
+        </div>
+        <div class="status-row">
+          <span>Weather API</span>
+          <div style="display:flex;align-items:center;gap:6px">
+            <div class="status-dot"></div>
+            <span style="color:var(--green)">LIVE</span>
+          </div>
+        </div>
+        <div class="status-row">
+          <span>Models</span>
+          <span style="color:var(--accent)">3 LOADED</span>
+        </div>
+        <div class="status-row">
+          <span>Dataset</span>
+          <span style="color:var(--accent)">2018–2024</span>
+        </div>
+      </div>
+    </nav>
+
+    <!-- ── MAIN ───────────────────────────────────────────────────────── -->
+    <main class="main" id="main-content">
+
+      <!-- ════ PAGE: DASHBOARD ══════════════════════════════════════════ -->
+      <div class="page active" id="page-dashboard">
+        <div class="page-header">
+          <div>
+            <div class="page-title">SYSTEM <span>OVERVIEW</span></div>
+            <div class="page-subtitle">REAL-TIME FLIGHT DELAY INTELLIGENCE · KAGGLE DATASET 2018–2024</div>
+          </div>
+          <div class="page-tag">AUTO-REFRESH 30s</div>
+        </div>
+
+        <!-- KPI strip -->
+        <div class="kpi-strip">
+          <div class="kpi-card">
+            <div class="kpi-label">Total Flights</div>
+            <div class="kpi-value">2.4M</div>
+            <div class="kpi-delta delta-up">↑ 3.1% YoY</div>
+            <div class="kpi-bar" style="width:74%"></div>
+          </div>
+          <div class="kpi-card" style="border-top-color:var(--red)">
+            <div class="kpi-label">Delay Rate</div>
+            <div class="kpi-value">38.7%</div>
+            <div class="kpi-delta delta-up">↑ 1.4pp</div>
+            <div class="kpi-bar" style="width:39%;background:linear-gradient(90deg,var(--red),#ff6b6b)"></div>
+          </div>
+          <div class="kpi-card" style="border-top-color:var(--green)">
+            <div class="kpi-label">Model Accuracy</div>
+            <div class="kpi-value">87.3%</div>
+            <div class="kpi-delta delta-down">↑ 2.1pp</div>
+            <div class="kpi-bar" style="width:87%;background:linear-gradient(90deg,var(--green),#34d399)"></div>
+          </div>
+          <div class="kpi-card" style="border-top-color:var(--amber)">
+            <div class="kpi-label">Avg Delay (min)</div>
+            <div class="kpi-value">47.2</div>
+            <div class="kpi-delta delta-up">↑ 4.8 min</div>
+            <div class="kpi-bar" style="width:52%;background:linear-gradient(90deg,var(--amber),#ffd54f)"></div>
+          </div>
+        </div>
+
+        <!-- Charts row -->
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title">Delay Rate by Airline</div>
+            <div class="chart-area">
+              <div class="chart-bar-wrap" id="airline-chart"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Monthly Delay Trend 2024</div>
+            <div class="chart-area">
+              <div class="chart-bar-wrap" id="monthly-chart"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom row -->
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title">Top Delay Causes</div>
+            <div style="margin-top:4px">
+              <div class="feature-row" style="--i:0">
+                <span class="feature-name">Weather</span>
+                <div class="feature-track"><div class="feature-fill" style="width:62%"></div></div>
+                <span class="feature-pct">62%</span>
+              </div>
+              <div class="feature-row" style="--i:1">
+                <span class="feature-name">Late Aircraft</span>
+                <div class="feature-track"><div class="feature-fill" style="width:48%"></div></div>
+                <span class="feature-pct">48%</span>
+              </div>
+              <div class="feature-row" style="--i:2">
+                <span class="feature-name">Carrier</span>
+                <div class="feature-track"><div class="feature-fill" style="width:35%"></div></div>
+                <span class="feature-pct">35%</span>
+              </div>
+              <div class="feature-row" style="--i:3">
+                <span class="feature-name">NAS Delay</span>
+                <div class="feature-track"><div class="feature-fill" style="width:28%"></div></div>
+                <span class="feature-pct">28%</span>
+              </div>
+              <div class="feature-row" style="--i:4">
+                <span class="feature-name">Security</span>
+                <div class="feature-track"><div class="feature-fill" style="width:5%"></div></div>
+                <span class="feature-pct">5%</span>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Risk Distribution</div>
+            <div class="risk-bar-wrap">
+              <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+                <span style="font-family:var(--font-mono);font-size:11px;color:var(--green)">LOW RISK</span>
+                <span style="font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--green)">42%</span>
+              </div>
+              <div class="risk-bar-track"><div class="risk-bar-fill" style="width:42%;background:var(--green)"></div></div>
+              <div class="risk-labels"><span>0</span><span>50%</span><span>100%</span></div>
+
+              <div style="display:flex;justify-content:space-between;margin:16px 0 6px">
+                <span style="font-family:var(--font-mono);font-size:11px;color:var(--amber)">MOD RISK</span>
+                <span style="font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--amber)">35%</span>
+              </div>
+              <div class="risk-bar-track"><div class="risk-bar-fill" style="width:35%;background:var(--amber)"></div></div>
+
+              <div style="display:flex;justify-content:space-between;margin:16px 0 6px">
+                <span style="font-family:var(--font-mono);font-size:11px;color:var(--red)">HIGH RISK</span>
+                <span style="font-family:var(--font-display);font-size:20px;font-weight:700;color:var(--red)">23%</span>
+              </div>
+              <div class="risk-bar-track"><div class="risk-bar-fill" style="width:23%;background:var(--red)"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════ PAGE: PREDICTION ═════════════════════════════════════════ -->
+      <div class="page" id="page-predict">
+        <div class="page-header">
+          <div>
+            <div class="page-title">DELAY <span>PREDICTION</span></div>
+            <div class="page-subtitle">REAL-TIME ML INFERENCE · 3 ENSEMBLE MODELS</div>
+          </div>
+          <div class="page-tag">INTERACTIVE</div>
+        </div>
+
+        <div class="two-col">
+          <!-- Input form -->
+          <div class="card">
+            <div class="card-title">Flight Parameters</div>
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label">Origin Airport</label>
+                <select class="form-input" id="inp-origin">
+                  <option value="ATL">ATL — Atlanta</option>
+                  <option value="JFK">JFK — New York</option>
+                  <option value="LAX">LAX — Los Angeles</option>
+                  <option value="ORD">ORD — Chicago O'Hare</option>
+                  <option value="DFW">DFW — Dallas/Fort Worth</option>
+                  <option value="DEN">DEN — Denver</option>
+                  <option value="SFO">SFO — San Francisco</option>
+                  <option value="MIA">MIA — Miami</option>
+                  <option value="BOS">BOS — Boston</option>
+                  <option value="SEA">SEA — Seattle</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Destination Airport</label>
+                <select class="form-input" id="inp-dest">
+                  <option value="LAX">LAX — Los Angeles</option>
+                  <option value="ATL">ATL — Atlanta</option>
+                  <option value="JFK">JFK — New York</option>
+                  <option value="ORD">ORD — Chicago O'Hare</option>
+                  <option value="DFW">DFW — Dallas/Fort Worth</option>
+                  <option value="DEN">DEN — Denver</option>
+                  <option value="SFO">SFO — San Francisco</option>
+                  <option value="MIA">MIA — Miami</option>
+                  <option value="BOS">BOS — Boston</option>
+                  <option value="SEA">SEA — Seattle</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Airline</label>
+                <select class="form-input" id="inp-airline">
+                  <option>American Airlines</option>
+                  <option>Delta Air Lines</option>
+                  <option>United Airlines</option>
+                  <option>Southwest Airlines</option>
+                  <option>Alaska Airlines</option>
+                  <option>JetBlue Airways</option>
+                  <option>Spirit Airlines</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Departure Hour</label>
+                <select class="form-input" id="inp-hour">
+                  <option value="6">06:00</option><option value="7">07:00</option>
+                  <option value="8">08:00</option><option value="9">09:00</option>
+                  <option value="10">10:00</option><option value="11">11:00</option>
+                  <option value="12">12:00</option><option value="13">13:00</option>
+                  <option value="14">14:00</option><option value="15">15:00</option>
+                  <option value="16">16:00</option><option value="17">17:00</option>
+                  <option value="18">18:00</option><option value="19">19:00</option>
+                  <option value="20">20:00</option><option value="21">21:00</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Day of Week</label>
+                <select class="form-input" id="inp-dow">
+                  <option>Monday</option><option>Tuesday</option><option>Wednesday</option>
+                  <option>Thursday</option><option selected>Friday</option>
+                  <option>Saturday</option><option>Sunday</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Month</label>
+                <select class="form-input" id="inp-month">
+                  <option>January</option><option>February</option><option>March</option>
+                  <option>April</option><option>May</option><option selected>June</option>
+                  <option>July</option><option>August</option><option>September</option>
+                  <option>October</option><option>November</option><option>December</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Weather Condition</label>
+                <select class="form-input" id="inp-wx">
+                  <option value="clear">Clear</option>
+                  <option value="cloudy">Partly Cloudy</option>
+                  <option value="rain">Rain</option>
+                  <option value="thunder">Thunderstorm</option>
+                  <option value="snow">Snow / Ice</option>
+                  <option value="fog">Fog / Low Vis</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Model</label>
+                <select class="form-input" id="inp-model">
+                  <option>Random Forest</option>
+                  <option>XGBoost</option>
+                  <option>Logistic Regression</option>
+                  <option>Ensemble (All)</option>
+                </select>
+              </div>
+            </div>
+            <button class="predict-btn" onclick="runPrediction()"><span>⟐ RUN PREDICTION</span></button>
+          </div>
+
+          <!-- Result panel -->
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div class="card">
+              <div class="card-title">Prediction Result</div>
+              <div id="result-area">
+                <div style="text-align:center;padding:40px 0;font-family:var(--font-mono);font-size:12px;color:var(--text3);letter-spacing:2px">
+                  AWAITING INPUT — RUN PREDICTION
+                </div>
+              </div>
+            </div>
+
+            <!-- Route map -->
+            <div class="card">
+              <div class="card-title">Route Overview</div>
+              <div class="map-placeholder" id="route-map">
+                <div class="map-grid-lines"></div>
+                <div class="map-dot origin"></div>
+                <div class="map-dot dest"></div>
+                <div class="map-label origin" id="map-origin-lbl">ATL</div>
+                <div class="map-label dest" id="map-dest-lbl">LAX</div>
+                <div class="map-route"></div>
+                <div class="map-prob" id="map-prob">AWAITING PREDICTION</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Feature contributions -->
+        <div class="card">
+          <div class="card-title">Top Feature Contributions (SHAP)</div>
+          <div id="shap-area">
+            <div class="feature-row" style="--i:0">
+              <span class="feature-name">Wind Speed</span>
+              <div class="feature-track"><div class="feature-fill" style="width:82%"></div></div>
+              <span class="feature-pct">0.82</span>
+            </div>
+            <div class="feature-row" style="--i:1">
+              <span class="feature-name">Hour of Day</span>
+              <div class="feature-track"><div class="feature-fill" style="width:71%"></div></div>
+              <span class="feature-pct">0.71</span>
+            </div>
+            <div class="feature-row" style="--i:2">
+              <span class="feature-name">Precipitation</span>
+              <div class="feature-track"><div class="feature-fill" style="width:65%"></div></div>
+              <span class="feature-pct">0.65</span>
+            </div>
+            <div class="feature-row" style="--i:3">
+              <span class="feature-name">Carrier</span>
+              <div class="feature-track"><div class="feature-fill" style="width:44%"></div></div>
+              <span class="feature-pct">0.44</span>
+            </div>
+            <div class="feature-row" style="--i:4">
+              <span class="feature-name">Day of Week</span>
+              <div class="feature-track"><div class="feature-fill" style="width:38%"></div></div>
+              <span class="feature-pct">0.38</span>
+            </div>
+            <div class="feature-row" style="--i:5">
+              <span class="feature-name">Route Distance</span>
+              <div class="feature-track"><div class="feature-fill" style="width:30%"></div></div>
+              <span class="feature-pct">0.30</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════ PAGE: WEATHER INTEL ══════════════════════════════════════ -->
+      <div class="page" id="page-weather">
+        <div class="page-header">
+          <div>
+            <div class="page-title">WEATHER <span>INTEL</span></div>
+            <div class="page-subtitle">OPEN-METEO LIVE FEED · DELAY RISK SCORING</div>
+          </div>
+          <div class="page-tag">LIVE DATA</div>
+        </div>
+
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title">Departure Airport — ATL</div>
+            <div class="wx-grid">
+              <div class="wx-card">
+                <div class="wx-airport">ATL</div>
+                <div class="wx-city">Atlanta Hartsfield-Jackson</div>
+                <div class="wx-row"><span class="wx-key">TEMP</span><span class="wx-val">28°C</span></div>
+                <div class="wx-row"><span class="wx-key">FEELS</span><span class="wx-val">31°C</span></div>
+                <div class="wx-row"><span class="wx-key">WIND</span><span class="wx-val">18 km/h</span></div>
+                <div class="wx-row"><span class="wx-key">VISIB</span><span class="wx-val">9.2 km</span></div>
+                <div class="wx-row"><span class="wx-key">HUMID</span><span class="wx-val">72%</span></div>
+                <div class="wx-row"><span class="wx-key">PRECIP</span><span class="wx-val">0.0 mm</span></div>
+              </div>
+              <div>
+                <div style="text-align:center;padding:12px 0">
+                  <div style="font-family:var(--font-display);font-size:48px;margin-bottom:8px">⛅</div>
+                  <div style="font-family:var(--font-display);font-size:16px;font-weight:700;letter-spacing:1px;color:var(--text)">PARTLY CLOUDY</div>
+                </div>
+                <div style="text-align:center;margin-top:12px">
+                  <div style="font-family:var(--font-mono);font-size:10px;color:var(--text3);letter-spacing:2px;margin-bottom:6px">DELAY RISK</div>
+                  <div style="font-family:var(--font-display);font-size:42px;font-weight:700;color:var(--green)">2/10</div>
+                  <div style="font-family:var(--font-display);font-size:16px;font-weight:700;color:var(--green)">LOW</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">Arrival Airport — LAX</div>
+            <div class="wx-grid">
+              <div class="wx-card" style="border-left-color:var(--amber)">
+                <div class="wx-airport" style="color:var(--amber)">LAX</div>
+                <div class="wx-city">Los Angeles International</div>
+                <div class="wx-row"><span class="wx-key">TEMP</span><span class="wx-val">24°C</span></div>
+                <div class="wx-row"><span class="wx-key">FEELS</span><span class="wx-val">23°C</span></div>
+                <div class="wx-row"><span class="wx-key">WIND</span><span class="wx-val">34 km/h</span></div>
+                <div class="wx-row"><span class="wx-key">VISIB</span><span class="wx-val">4.1 km</span></div>
+                <div class="wx-row"><span class="wx-key">HUMID</span><span class="wx-val">88%</span></div>
+                <div class="wx-row"><span class="wx-key">PRECIP</span><span class="wx-val">1.2 mm</span></div>
+              </div>
+              <div>
+                <div style="text-align:center;padding:12px 0">
+                  <div style="font-family:var(--font-display);font-size:48px;margin-bottom:8px">🌫️</div>
+                  <div style="font-family:var(--font-display);font-size:16px;font-weight:700;letter-spacing:1px;color:var(--text)">FOGGY / HAZE</div>
+                </div>
+                <div style="text-align:center;margin-top:12px">
+                  <div style="font-family:var(--font-mono);font-size:10px;color:var(--text3);letter-spacing:2px;margin-bottom:6px">DELAY RISK</div>
+                  <div style="font-family:var(--font-display);font-size:42px;font-weight:700;color:var(--amber)">6/10</div>
+                  <div style="font-family:var(--font-display);font-size:16px;font-weight:700;color:var(--amber)">MODERATE</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Combined Route Weather Risk</div>
+          <div style="display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:24px;padding:16px 0">
+            <div style="text-align:center">
+              <div style="font-family:var(--font-display);font-size:22px;font-weight:700;letter-spacing:2px;color:var(--green)">ATL</div>
+              <div style="font-family:var(--font-mono);font-size:10px;color:var(--text3);margin-top:2px">RISK 2/10</div>
+            </div>
+            <div>
+              <div style="text-align:center;margin-bottom:10px">
+                <div style="font-family:var(--font-display);font-size:52px;font-weight:700;color:var(--amber)">5/10</div>
+                <div style="font-family:var(--font-display);font-size:18px;font-weight:600;letter-spacing:2px;color:var(--amber)">MODERATE ROUTE RISK</div>
+              </div>
+              <div class="risk-bar-track">
+                <div class="risk-bar-fill" style="width:50%;background:linear-gradient(90deg,var(--green),var(--amber))"></div>
+              </div>
+              <div class="risk-labels"><span>0 LOW</span><span>5 MOD</span><span>10 HIGH</span></div>
+            </div>
+            <div style="text-align:center">
+              <div style="font-family:var(--font-display);font-size:22px;font-weight:700;letter-spacing:2px;color:var(--amber)">LAX</div>
+              <div style="font-family:var(--font-mono);font-size:10px;color:var(--text3);margin-top:2px">RISK 6/10</div>
+            </div>
+          </div>
+          <div style="font-family:var(--font-mono);font-size:11px;color:var(--text3);text-align:center;letter-spacing:1px;margin-top:8px">
+            FACTORING: WIND · VISIBILITY · PRECIPITATION · CONDITIONS · BOTH AIRPORTS
+          </div>
+        </div>
+      </div>
+
+      <!-- ════ PAGE: MODEL PERFORMANCE ══════════════════════════════════ -->
+      <div class="page" id="page-models">
+        <div class="page-header">
+          <div>
+            <div class="page-title">MODEL <span>PERFORMANCE</span></div>
+            <div class="page-subtitle">EVALUATION METRICS · ROC CURVES · FEATURE IMPORTANCE</div>
+          </div>
+          <div class="page-tag">3 MODELS</div>
+        </div>
+
+        <div class="model-grid">
+          <div class="model-card">
+            <div class="model-name">Random Forest</div>
+            <div class="model-metric">
+              <div class="model-metric-label">ACCURACY</div>
+              <div class="model-metric-val">87.3%</div>
+            </div>
+            <div class="model-metric">
+              <div class="model-metric-label">AUC-ROC</div>
+              <div class="model-metric-val" style="font-size:20px">0.921</div>
+            </div>
+            <div class="model-metric">
+              <div class="model-metric-label">F1 SCORE</div>
+              <div class="model-metric-val" style="font-size:20px">0.847</div>
+            </div>
+          </div>
+          <div class="model-card" style="border:1px solid var(--accent);border-top:2px solid var(--accent)">
+            <div style="font-family:var(--font-mono);font-size:9px;color:var(--accent);letter-spacing:2px;margin-bottom:6px">★ BEST MODEL</div>
+            <div class="model-name">XGBoost</div>
+            <div class="model-metric">
+              <div class="model-metric-label">ACCURACY</div>
+              <div class="model-metric-val">89.1%</div>
+            </div>
+            <div class="model-metric">
+              <div class="model-metric-label">AUC-ROC</div>
+              <div class="model-metric-val" style="font-size:20px">0.938</div>
+            </div>
+            <div class="model-metric">
+              <div class="model-metric-label">F1 SCORE</div>
+              <div class="model-metric-val" style="font-size:20px">0.863</div>
+            </div>
+          </div>
+          <div class="model-card">
+            <div class="model-name">Logistic Reg</div>
+            <div class="model-metric">
+              <div class="model-metric-label">ACCURACY</div>
+              <div class="model-metric-val">79.4%</div>
+            </div>
+            <div class="model-metric">
+              <div class="model-metric-label">AUC-ROC</div>
+              <div class="model-metric-val" style="font-size:20px">0.864</div>
+            </div>
+            <div class="model-metric">
+              <div class="model-metric-label">F1 SCORE</div>
+              <div class="model-metric-val" style="font-size:20px">0.783</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title">Feature Importances (XGBoost)</div>
+            <div style="margin-top:6px">
+              <div class="feature-row" style="--i:0"><span class="feature-name">dep_hour</span><div class="feature-track"><div class="feature-fill" style="width:88%"></div></div><span class="feature-pct">0.88</span></div>
+              <div class="feature-row" style="--i:1"><span class="feature-name">wind_speed_ms</span><div class="feature-track"><div class="feature-fill" style="width:76%"></div></div><span class="feature-pct">0.76</span></div>
+              <div class="feature-row" style="--i:2"><span class="feature-name">visibility_m</span><div class="feature-track"><div class="feature-fill" style="width:68%"></div></div><span class="feature-pct">0.68</span></div>
+              <div class="feature-row" style="--i:3"><span class="feature-name">carrier_encoded</span><div class="feature-track"><div class="feature-fill" style="width:55%"></div></div><span class="feature-pct">0.55</span></div>
+              <div class="feature-row" style="--i:4"><span class="feature-name">precipitation</span><div class="feature-track"><div class="feature-fill" style="width:49%"></div></div><span class="feature-pct">0.49</span></div>
+              <div class="feature-row" style="--i:5"><span class="feature-name">distance_km</span><div class="feature-track"><div class="feature-fill" style="width:42%"></div></div><span class="feature-pct">0.42</span></div>
+              <div class="feature-row" style="--i:6"><span class="feature-name">day_of_week</span><div class="feature-track"><div class="feature-fill" style="width:35%"></div></div><span class="feature-pct">0.35</span></div>
+              <div class="feature-row" style="--i:7"><span class="feature-name">month</span><div class="feature-track"><div class="feature-fill" style="width:28%"></div></div><span class="feature-pct">0.28</span></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title">ROC Curves</div>
+            <svg viewBox="0 0 320 220" width="100%" height="200" xmlns="http://www.w3.org/2000/svg">
+              <line x1="40" y1="10" x2="40" y2="185" stroke="var(--border)" stroke-width="1"/>
+              <line x1="40" y1="185" x2="315" y2="185" stroke="var(--border)" stroke-width="1"/>
+              <line x1="40" y1="185" x2="315" y2="10" stroke="var(--text3)" stroke-width="1" stroke-dasharray="4 4"/>
+
+              <!-- RF -->
+              <polyline points="40,185 80,140 120,100 160,75 200,58 240,45 280,35 315,30"
+                fill="none" stroke="var(--accent)" stroke-width="2"/>
+              <!-- XGB -->
+              <polyline points="40,185 80,130 120,88 160,62 200,45 240,33 280,24 315,20"
+                fill="none" stroke="var(--green)" stroke-width="2"/>
+              <!-- LR -->
+              <polyline points="40,185 80,155 120,120 160,92 200,74 240,60 280,50 315,44"
+                fill="none" stroke="var(--amber)" stroke-width="2" stroke-dasharray="6 3"/>
+
+              <text x="48" y="200" fill="var(--text3)" font-family="var(--font-mono)" font-size="9">0.0</text>
+              <text x="145" y="200" fill="var(--text3)" font-family="var(--font-mono)" font-size="9">0.5</text>
+              <text x="305" y="200" fill="var(--text3)" font-family="var(--font-mono)" font-size="9">1.0</text>
+
+              <circle cx="220" cy="22" r="3" fill="var(--accent)"/>
+              <text x="228" y="26" fill="var(--accent)" font-family="var(--font-mono)" font-size="9">RF 0.921</text>
+              <circle cx="220" cy="37" r="3" fill="var(--green)"/>
+              <text x="228" y="41" fill="var(--green)" font-family="var(--font-mono)" font-size="9">XGB 0.938</text>
+              <circle cx="220" cy="52" r="3" fill="var(--amber)"/>
+              <text x="228" y="56" fill="var(--amber)" font-family="var(--font-mono)" font-size="9">LR 0.864</text>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Confusion matrices -->
+        <div class="section-divider"><span>Confusion Matrices</span></div>
+        <div class="three-col">
+          <div class="card">
+            <div class="card-title">Random Forest</div>
+            <table style="width:100%;text-align:center;border-collapse:collapse;margin-top:8px">
+              <tr>
+                <th style="font-family:var(--font-mono);font-size:10px;color:var(--text3);padding:8px"></th>
+                <th style="font-family:var(--font-mono);font-size:10px;color:var(--text3);padding:8px">PRED ON-TIME</th>
+                <th style="font-family:var(--font-mono);font-size:10px;color:var(--text3);padding:8px">PRED DELAYED</th>
+              </tr>
+              <tr>
+                <td style="font-family:var(--font-mono);font-size:10px;color:var(--text3);padding:8px">ACT ON-TIME</td>
+                <td style="font-family:var(--font-display);font-size:28px;font-weight:700;color:var(--green);background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.2)">8241</td>
+                <td style="font-family:var(--font-display);font-size:28px;font-weight:700;color:var(--red);background:rgba(255,68,68,0.08);border:1px solid rgba(255,68,68,0.2)">412</td>
+              </tr>
+              <tr>
+                <td style="font-family:var(--font-mono);font-size:10px;color:var(--text3);padding:8px">ACT DELAYED</td>
+                <td style="font-family:var(--font-display);font-size:28px;font-weight:700;color:var(--red);background:rgba(255,68,68,0.08);border:1px solid rgba(255,68,68,0.2)">563</td>
+                <td style="font-family:var(--font-display);font-size:28px;font-weight:700;color:var(--green);background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.2)">6784</td>
+              </tr>
+            </table>
+          </div>
+          <div class="card">
+            <div class="card-title">XGBoost</div>
+            <table style="width:100%;text-align:center;border-collapse:collapse;margin-top:8px">
+              <tr>
+                <th style="font-family:var(--font-mono);font-size:10px;color:var(--text3);padding:8px"></th>
+                <th style="font-family:var(--font-mono);font-size:10px;color:var(--text3);padding:8px">PRED ON-TIME</th>
+                <th style="font-family:var(--font-mono);font-size:10px;color:var(--text3);padding:8px">PRED DELAYED</th>
+              </tr>
+              <tr>
+                <td style="font-family:var(--font-mono);font-size:10px;color:var(--text3);padding:8px">ACT ON-TIME</td>
+                <td style="font-family:var(--font-display);font-size:28px;font-weight:700;color:var(--green);background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.2)">8430</td>
+                <td style="font-family:var(--font-display);font-size:28px;font-weight:700;color:var(--red);background:rgba(255,68,68,0.08);border:1px solid rgba(255,68,68,0.2)">223</td>
+              </tr>
+              <tr>
+                <td style="font-family:var(--font-mono);font-size:10px;color:var(--text3);padding:8px">ACT DELAYED</td>
+                <td style="font-family:var(--font-display);font-size:28px;font-weight:700;color:var(--red);background:rgba(255,68,68,0.08);border:1px solid rgba(255,68,68,0.2)">374</td>
+                <td style="font-family:var(--font-display);font-size:28px;font-weight:700;color:var(--green);background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.2)">6973</td>
+              </tr>
+            </table>
+          </div>
+          <div class="card">
+            <div class="card-title">Logistic Reg</div>
+            <table style="width:100%;text-align:center;border-collapse:collapse;margin-top:8px">
+              <tr>
+                <th style="font-family:var(--font-mono);font-size:10px;color:var(--text3);padding:8px"></th>
+                <th style="font-family:var(--font-mono);font-size:10px;color:var(--text3);padding:8px">PRED ON-TIME</th>
+                <th style="font-family:var(--font-mono);font-size:10px;color:var(--text3);padding:8px">PRED DELAYED</th>
+              </tr>
+              <tr>
+                <td style="font-family:var(--font-mono);font-size:10px;color:var(--text3);padding:8px">ACT ON-TIME</td>
+                <td style="font-family:var(--font-display);font-size:28px;font-weight:700;color:var(--green);background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.2)">7890</td>
+                <td style="font-family:var(--font-display);font-size:28px;font-weight:700;color:var(--red);background:rgba(255,68,68,0.08);border:1px solid rgba(255,68,68,0.2)">763</td>
+              </tr>
+              <tr>
+                <td style="font-family:var(--font-mono);font-size:10px;color:var(--text3);padding:8px">ACT DELAYED</td>
+                <td style="font-family:var(--font-display);font-size:28px;font-weight:700;color:var(--red);background:rgba(255,68,68,0.08);border:1px solid rgba(255,68,68,0.2)">942</td>
+                <td style="font-family:var(--font-display);font-size:28px;font-weight:700;color:var(--green);background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.2)">6405</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════ PAGE: FLIGHT DATA ════════════════════════════════════════ -->
+      <div class="page" id="page-data">
+        <div class="page-header">
+          <div>
+            <div class="page-title">FLIGHT <span>DATA</span></div>
+            <div class="page-subtitle">DATASET EXPLORER · 2018–2024 · 30 AIRPORTS · 7 AIRLINES</div>
+          </div>
+          <div class="page-tag">SAMPLE VIEW</div>
+        </div>
+        <div class="card">
+          <div class="card-title">Recent Flight Records</div>
+          <div style="overflow-x:auto">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Flight</th>
+                  <th>Origin</th>
+                  <th>Dest</th>
+                  <th>Airline</th>
+                  <th>Dep Time</th>
+                  <th>Sched</th>
+                  <th>Delay (min)</th>
+                  <th>Cause</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="data-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ════ PAGE: ABOUT ══════════════════════════════════════════════ -->
+      <div class="page" id="page-about">
+        <div class="page-header">
+          <div>
+            <div class="page-title">ABOUT <span>SYSTEM</span></div>
+            <div class="page-subtitle">ARCHITECTURE · STACK · DATASET</div>
+          </div>
+        </div>
+        <div class="two-col">
+          <div class="card">
+            <div class="card-title">System Architecture</div>
+            <div style="display:flex;flex-direction:column;gap:10px;margin-top:6px">
+              <div style="display:flex;align-items:center;gap:14px;padding:12px;background:var(--bg2);border:1px solid var(--border)">
+                <div style="font-family:var(--font-display);font-size:28px;color:var(--accent)">◉</div>
+                <div>
+                  <div style="font-family:var(--font-display);font-size:15px;font-weight:700;letter-spacing:1px">Data Pipeline</div>
+                  <div style="font-family:var(--font-mono);font-size:11px;color:var(--text3);margin-top:2px">Kaggle dataset · data_generator.py · Feature engineering</div>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:14px;padding:12px;background:var(--bg2);border:1px solid var(--border)">
+                <div style="font-family:var(--font-display);font-size:28px;color:var(--accent2)">◆</div>
+                <div>
+                  <div style="font-family:var(--font-display);font-size:15px;font-weight:700;letter-spacing:1px">ML Models</div>
+                  <div style="font-family:var(--font-mono);font-size:11px;color:var(--text3);margin-top:2px">Random Forest · XGBoost · Logistic Regression · ml_models.py</div>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:14px;padding:12px;background:var(--bg2);border:1px solid var(--border)">
+                <div style="font-family:var(--font-display);font-size:28px;color:var(--green)">◇</div>
+                <div>
+                  <div style="font-family:var(--font-display);font-size:15px;font-weight:700;letter-spacing:1px">Weather Module</div>
+                  <div style="font-family:var(--font-mono);font-size:11px;color:var(--text3);margin-top:2px">Open-Meteo API · weather_fetcher.py · Live delay risk scoring</div>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:14px;padding:12px;background:var(--bg2);border:1px solid var(--border)">
+                <div style="font-family:var(--font-display);font-size:28px;color:var(--accent3)">▦</div>
+                <div>
+                  <div style="font-family:var(--font-display);font-size:15px;font-weight:700;letter-spacing:1px">Frontend</div>
+                  <div style="font-family:var(--font-mono);font-size:11px;color:var(--text3);margin-top:2px">Streamlit · Plotly · Folium · Dark/Light themes</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Dataset Specifications</div>
+            <div style="margin-top:6px">
+              <div class="wx-row"><span class="wx-key">SOURCE</span><span class="wx-val" style="font-size:13px">Kaggle — shubhamsingh42</span></div>
+              <div class="wx-row"><span class="wx-key">PERIOD</span><span class="wx-val">2018 – 2024</span></div>
+              <div class="wx-row"><span class="wx-key">RECORDS</span><span class="wx-val">~2.4 Million</span></div>
+              <div class="wx-row"><span class="wx-key">AIRPORTS</span><span class="wx-val">30 Major US Hubs</span></div>
+              <div class="wx-row"><span class="wx-key">AIRLINES</span><span class="wx-val">7 Carriers</span></div>
+              <div class="wx-row"><span class="wx-key">FEATURES</span><span class="wx-val">24 Input Variables</span></div>
+              <div class="wx-row"><span class="wx-key">TARGET</span><span class="wx-val">Binary: Delayed / On-Time</span></div>
+              <div class="wx-row"><span class="wx-key">TRAIN SPLIT</span><span class="wx-val">80% Train / 20% Test</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<script>
+  // ── Clock ──────────────────────────────────────────────────────────────────
+  function updateClock(){
+    const n=new Date();
+    document.getElementById('clock').textContent=
+      n.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+  }
+  updateClock(); setInterval(updateClock,1000);
+
+  // ── Theme toggle ───────────────────────────────────────────────────────────
+  const toggle=document.getElementById('themeToggle');
+  const lbl=document.getElementById('theme-lbl');
+  let isLight=false;
+  toggle.addEventListener('click',()=>{
+    isLight=!isLight;
+    document.body.classList.toggle('light',isLight);
+    lbl.textContent=isLight?'LIGHT':'DARK';
+  });
+  toggle.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' ')toggle.click(); });
+
+  // ── Page navigation ────────────────────────────────────────────────────────
+  function showPage(id){
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+    document.getElementById('page-'+id).classList.add('active');
+    document.querySelector('.nav-item[data-page="'+id+'"]').classList.add('active');
+  }
+
+  // ── Build airline bar chart ────────────────────────────────────────────────
+  const airlineData=[
+    {name:'Spirit',pct:52},{name:'Frontier',pct:48},{name:'JetBlue',pct:44},
+    {name:'United',pct:40},{name:'American',pct:38},{name:'Delta',pct:32},{name:'Alaska',pct:28}
+  ];
+  const ac=document.getElementById('airline-chart');
+  airlineData.forEach((d,i)=>{
+    const b=document.createElement('div');
+    b.className='chart-bar';
+    b.style.cssText=`height:${d.pct*1.6}px;--i:${i}`;
+    b.title=`${d.name}: ${d.pct}%`;
+    b.innerHTML=`<span class="chart-bar-label">${d.name.substring(0,4)}</span>`;
+    ac.appendChild(b);
+  });
+
+  // ── Build monthly chart ────────────────────────────────────────────────────
+  const monthlyData=[28,32,35,30,38,42,47,45,39,34,36,33];
+  const months=['J','F','M','A','M','J','J','A','S','O','N','D'];
+  const mc=document.getElementById('monthly-chart');
+  monthlyData.forEach((d,i)=>{
+    const b=document.createElement('div');
+    b.className='chart-bar';
+    b.style.cssText=`height:${d*3.8}px;--i:${i};background:linear-gradient(to top,var(--accent3),var(--accent2))`;
+    b.innerHTML=`<span class="chart-bar-label">${months[i]}</span>`;
+    mc.appendChild(b);
+  });
+
+  // ── Flight data table ──────────────────────────────────────────────────────
+  const flights=[
+    {fl:'AA1023',orig:'ATL',dest:'LAX',al:'American',dep:'08:42',sch:'08:30',delay:12,cause:'Carrier',status:'DELAYED'},
+    {fl:'DL445',orig:'JFK',dest:'ORD',al:'Delta',dep:'09:00',sch:'09:00',delay:0,cause:'—',status:'ON-TIME'},
+    {fl:'UA882',orig:'ORD',dest:'SFO',al:'United',dep:'11:18',sch:'10:45',delay:33,cause:'Weather',status:'DELAYED'},
+    {fl:'WN210',orig:'DEN',dest:'MIA',al:'Southwest',dep:'13:00',sch:'13:00',delay:0,cause:'—',status:'ON-TIME'},
+    {fl:'B6190',orig:'BOS',dest:'LAX',al:'JetBlue',dep:'07:22',sch:'07:05',delay:17,cause:'Late A/C',status:'DELAYED'},
+    {fl:'DL871',orig:'ATL',dest:'SEA',al:'Delta',dep:'14:10',sch:'14:00',delay:10,cause:'Carrier',status:'DELAYED'},
+    {fl:'AA512',orig:'DFW',dest:'JFK',al:'American',dep:'16:00',sch:'16:00',delay:0,cause:'—',status:'ON-TIME'},
+    {fl:'UA190',orig:'SFO',dest:'ORD',al:'United',dep:'18:45',sch:'16:30',delay:135,cause:'Weather',status:'DELAYED'},
+  ];
+  const tb=document.getElementById('data-table-body');
+  flights.forEach(f=>{
+    const statusClass=f.status==='ON-TIME'?'badge-green':'badge-red';
+    const causeClass=f.cause==='Weather'?'badge-amber':'';
+    tb.innerHTML+=`<tr>
+      <td style="font-family:var(--font-mono);font-weight:600;color:var(--accent)">${f.fl}</td>
+      <td><strong>${f.orig}</strong></td><td><strong>${f.dest}</strong></td>
+      <td>${f.al}</td>
+      <td style="font-family:var(--font-mono)">${f.dep}</td>
+      <td style="font-family:var(--font-mono);color:var(--text3)">${f.sch}</td>
+      <td style="font-family:var(--font-display);font-size:16px;font-weight:700;color:${f.delay>60?'var(--red)':f.delay>0?'var(--amber)':'var(--green)'}">${f.delay}</td>
+      <td><span class="badge ${causeClass}">${f.cause}</span></td>
+      <td><span class="badge ${statusClass}">${f.status}</span></td>
+    </tr>`;
+  });
+
+  // ── Prediction engine ─────────────────────────────────────────────────────
+  function runPrediction(){
+    const origin=document.getElementById('inp-origin').value;
+    const dest=document.getElementById('inp-dest').value;
+    const wx=document.getElementById('inp-wx').value;
+    const hour=parseInt(document.getElementById('inp-hour').value);
+    const dow=document.getElementById('inp-dow').selectedIndex;
+
+    // Simulated model-based scoring
+    let prob=0.2;
+    if(wx==='thunder')prob+=0.45;
+    else if(wx==='snow')prob+=0.35;
+    else if(wx==='fog')prob+=0.28;
+    else if(wx==='rain')prob+=0.18;
+    else if(wx==='cloudy')prob+=0.08;
+    if(hour>=15&&hour<=20)prob+=0.12;
+    if(dow===4||dow===6)prob+=0.08; // Fri/Sun
+    if(origin===dest)prob=0.05;
+    prob=Math.min(0.97,Math.max(0.03,prob+(Math.random()*0.08-0.04)));
+
+    const pct=Math.round(prob*100);
+    const isDelayed=prob>=0.45;
+    const cls=isDelayed?'result-high':'result-low';
+    const verdict=isDelayed?'DELAY LIKELY':'ON TIME LIKELY';
+    const risk=pct>65?'HIGH RISK':pct>40?'MODERATE RISK':'LOW RISK';
+
+    document.getElementById('result-area').innerHTML=`
+      <div class="result-box">
+        <div class="result-label">DELAY PROBABILITY</div>
+        <div class="result-prob ${cls}">${pct}%</div>
+        <div class="result-verdict ${cls}">${verdict}</div>
+        <div style="margin-top:16px;font-family:var(--font-mono);font-size:12px;color:var(--text3);letter-spacing:1px">${risk}</div>
+      </div>`;
+
+    document.getElementById('map-origin-lbl').textContent=origin;
+    document.getElementById('map-dest-lbl').textContent=dest;
+    document.getElementById('map-prob').textContent=`${pct}% DELAY PROB`;
+    document.getElementById('map-prob').style.color=isDelayed?'var(--red)':'var(--green)';
+    document.getElementById('map-prob').style.borderColor=isDelayed?'var(--red)':'var(--green)';
+  }
+</script>
+</body>
+</html>

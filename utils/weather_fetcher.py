@@ -249,4 +249,3 @@ def build_weather_features(origin_wx: dict, dest_wx: dict) -> dict:
         "WORST_VIS_M":        min(origin_wx["visibility_m"], dest_wx["visibility_m"]),
         "ROUTE_WEATHER_RISK": compute_risk_score(origin_wx, dest_wx),
     }
- 
