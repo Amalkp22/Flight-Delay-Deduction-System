@@ -7,11 +7,6 @@ __pycache__/
 *.pyo
 *.pyd
 
-# Serialized ML models
-models/encoders.pkl
-models/feature_importances.pkl
-models/metrics.pkl
-models/models.pkl
 
 # Logger logs & configs
 project_changes.log
