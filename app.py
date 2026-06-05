@@ -85,7 +85,7 @@ if not st.session_state.trained:
 with st.sidebar:
     st.markdown("""
     <div style="text-align: center; padding: 15px 0 5px 0; display: flex; flex-direction: column; align-items: center;">
-      <div class="logo-icon" style="margin-bottom: 15px;"><span style="color: var(--accent) !important;">✈</span></div>
+      <div class="logo-icon" style="margin-bottom: 18px; width: 64px; height: 64px;"><span style="color: var(--accent) !important; font-size: 30px !important;">✈</span></div>
       <div style="font-family: 'Rajdhani', sans-serif; font-size: 26px; font-weight: 700; color: #00c8ff; letter-spacing: 3px; text-transform: uppercase;">
         AEROSIGHT
       </div>
