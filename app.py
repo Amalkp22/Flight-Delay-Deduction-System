@@ -344,7 +344,7 @@ st.markdown(f"""
 
     .logo {{
         font-family: var(--font-display) !important;
-        font-size: 32px; font-weight: 700; letter-spacing: 3px;
+        font-size: 36px; font-weight: 700; letter-spacing: 3px;
         color: var(--accent) !important; text-transform: uppercase;
         display: flex; align-items: center; gap: 12px;
     }}
