@@ -344,7 +344,7 @@ st.markdown(f"""
 
     .logo {{
         font-family: var(--font-display) !important;
-        font-size: 42px; font-weight: 700; letter-spacing: 3px;
+        font-size: 32px; font-weight: 700; letter-spacing: 3px;
         color: var(--accent) !important; text-transform: uppercase;
         display: flex; align-items: center; gap: 12px;
     }}
@@ -799,7 +799,6 @@ def draw_route_map(origin, dest, prob, o_wx, d_wx):
 st.markdown("""
 <div class="topbar">
   <div class="logo">
-    <div class="logo-icon"><span>✈</span></div>
     AEROSIGHT
   </div>
   <span style="font-family:var(--font-mono);font-size:12px;color:var(--text3);letter-spacing:1px;margin-right:auto;margin-left:20px;">
