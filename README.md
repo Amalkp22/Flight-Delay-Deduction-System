@@ -20,6 +20,11 @@ flight_delay_app/
 ├── requirements.txt
 ├── README.md                  # This file
 ├── readme.html                # Full HTML documentation
+├── models/                    # ✨ Pre-trained ML model binaries
+│   ├── encoders.pkl
+│   ├── feature_importances.pkl
+│   ├── metrics.pkl
+│   └── models.pkl
 └── utils/
     ├── data_generator.py      # Synthetic dataset generator (mimics Kaggle dataset)
     ├── ml_models.py           # ML model training & prediction
